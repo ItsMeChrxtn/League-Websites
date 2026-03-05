@@ -1,0 +1,490 @@
+const state = {
+  apiBase: localStorage.getItem("LEAGUE_API_BASE_URL") || "http://localhost:5000/api",
+  token: localStorage.getItem("LEAGUE_ADMIN_TOKEN") || "",
+  adminName: localStorage.getItem("LEAGUE_ADMIN_NAME") || "",
+  currentView: "standing",
+  teams: [],
+  schedule: [],
+  players: [],
+};
+
+const el = {
+  authShell: document.getElementById("authShell"),
+  dashboard: document.getElementById("dashboard"),
+  authMessage: document.getElementById("authMessage"),
+  globalMessage: document.getElementById("globalMessage"),
+  adminMeta: document.getElementById("adminMeta"),
+  viewTitle: document.getElementById("viewTitle"),
+  apiBaseInput: document.getElementById("apiBaseInput"),
+  usernameInput: document.getElementById("usernameInput"),
+  passwordInput: document.getElementById("passwordInput"),
+  sideNav: document.getElementById("sideNav"),
+  standingView: document.getElementById("standingView"),
+  scheduleView: document.getElementById("scheduleView"),
+  playersView: document.getElementById("playersView"),
+  teamsBody: document.getElementById("teamsBody"),
+  scheduleBody: document.getElementById("scheduleBody"),
+  playersBody: document.getElementById("playersBody"),
+  loginForm: document.getElementById("loginForm"),
+  logoutBtn: document.getElementById("logoutBtn"),
+  refreshBtn: document.getElementById("refreshBtn"),
+  teamForm: document.getElementById("teamForm"),
+  scheduleForm: document.getElementById("scheduleForm"),
+  playerForm: document.getElementById("playerForm"),
+};
+
+const byId = (id) => document.getElementById(id);
+
+const setMessage = (target, text, isError = false) => {
+  target.textContent = text || "";
+  target.style.color = isError ? "#ff9cb3" : "#ffd166";
+};
+
+const normalizeApiBase = (rawValue) => String(rawValue || "").trim().replace(/\/+$/, "");
+
+async function apiFetch(path, options = {}) {
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+  };
+
+  if (state.token) {
+    headers.Authorization = `Bearer ${state.token}`;
+  }
+
+  const response = await fetch(`${state.apiBase}${path}`, {
+    ...options,
+    headers,
+  });
+
+  let payload = null;
+  try {
+    payload = await response.json();
+  } catch (error) {
+    payload = null;
+  }
+
+  if (!response.ok) {
+    const message = payload && payload.message ? payload.message : `Request failed (${response.status})`;
+    throw new Error(message);
+  }
+
+  return payload;
+}
+
+function renderTeams() {
+  if (!state.teams.length) {
+    el.teamsBody.innerHTML = '<tr><td colspan="5">No team records found.</td></tr>';
+    return;
+  }
+
+  el.teamsBody.innerHTML = state.teams.map((team) => `
+    <tr>
+      <td>${team.name || "-"}</td>
+      <td>${Number(team.wins) || 0}</td>
+      <td>${Number(team.losses) || 0}</td>
+      <td>${Number(team.points) || 0}</td>
+      <td>
+        <div class="row-actions">
+          <button type="button" data-edit="team" data-id="${team._id}">Edit</button>
+          <button type="button" class="danger" data-delete="team" data-id="${team._id}">Delete</button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function renderSchedule() {
+  if (!state.schedule.length) {
+    el.scheduleBody.innerHTML = '<tr><td colspan="6">No schedule records found.</td></tr>';
+    return;
+  }
+
+  el.scheduleBody.innerHTML = state.schedule.map((game) => `
+    <tr>
+      <td>${game.team1 || "-"} vs ${game.team2 || "-"}</td>
+      <td>${game.date || "-"}</td>
+      <td>${game.time || "-"}</td>
+      <td>${game.venue || "-"}</td>
+      <td>${game.status || "Upcoming"}</td>
+      <td>
+        <div class="row-actions">
+          <button type="button" data-edit="schedule" data-id="${game._id}">Edit</button>
+          <button type="button" class="danger" data-delete="schedule" data-id="${game._id}">Delete</button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+}
+
+function renderPlayers() {
+  if (!state.players.length) {
+    el.playersBody.innerHTML = '<tr><td colspan="7">No best player records found.</td></tr>';
+    return;
+  }
+
+  el.playersBody.innerHTML = state.players.map((player) => `
+    <tr>
+      <td>${player.playerName || "-"}</td>
+      <td>${player.team || "-"}</td>
+      <td>${Number(player.points) || 0}</td>
+      <td>${Number(player.rebounds) || 0}</td>
+      <td>${Number(player.assists) || 0}</td>
+      <td>${player.gameDate || "-"}</td>
+      <td>
+        <div class="row-actions">
+          <button type="button" data-edit="player" data-id="${player._id}">Edit</button>
+          <button type="button" class="danger" data-delete="player" data-id="${player._id}">Delete</button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+}
+
+async function loadAllData() {
+  const [teams, schedule, players] = await Promise.all([
+    apiFetch("/teams"),
+    apiFetch("/schedule"),
+    apiFetch("/players"),
+  ]);
+
+  state.teams = Array.isArray(teams) ? teams : [];
+  state.schedule = Array.isArray(schedule) ? schedule : [];
+  state.players = Array.isArray(players) ? players : [];
+
+  renderTeams();
+  renderSchedule();
+  renderPlayers();
+}
+
+function resetTeamForm() {
+  byId("teamId").value = "";
+  byId("teamName").value = "";
+  byId("teamLogo").value = "";
+  byId("teamWins").value = 0;
+  byId("teamLosses").value = 0;
+  byId("teamPoints").value = 0;
+}
+
+function resetScheduleForm() {
+  byId("scheduleId").value = "";
+  byId("scheduleTeam1").value = "";
+  byId("scheduleTeam2").value = "";
+  byId("scheduleDate").value = "";
+  byId("scheduleTime").value = "";
+  byId("scheduleVenue").value = "";
+  byId("scheduleStatus").value = "Upcoming";
+}
+
+function resetPlayerForm() {
+  byId("playerId").value = "";
+  byId("playerName").value = "";
+  byId("playerTeam").value = "";
+  byId("playerPoints").value = 0;
+  byId("playerRebounds").value = 0;
+  byId("playerAssists").value = 0;
+  byId("playerGameDate").value = "";
+  byId("playerImage").value = "";
+}
+
+function switchView(viewName) {
+  state.currentView = viewName;
+
+  const titleMap = {
+    standing: "Team Standing",
+    schedule: "Game Schedule",
+    players: "Best Player",
+  };
+
+  el.viewTitle.textContent = titleMap[viewName] || "Dashboard";
+  el.standingView.classList.toggle("hidden", viewName !== "standing");
+  el.scheduleView.classList.toggle("hidden", viewName !== "schedule");
+  el.playersView.classList.toggle("hidden", viewName !== "players");
+
+  el.sideNav.querySelectorAll("button").forEach((button) => {
+    button.classList.toggle("active", button.dataset.view === viewName);
+  });
+}
+
+function populateTeamForm(item) {
+  byId("teamId").value = item._id || "";
+  byId("teamName").value = item.name || "";
+  byId("teamLogo").value = item.logo || "";
+  byId("teamWins").value = Number(item.wins) || 0;
+  byId("teamLosses").value = Number(item.losses) || 0;
+  byId("teamPoints").value = Number(item.points) || 0;
+}
+
+function populateScheduleForm(item) {
+  byId("scheduleId").value = item._id || "";
+  byId("scheduleTeam1").value = item.team1 || "";
+  byId("scheduleTeam2").value = item.team2 || "";
+  byId("scheduleDate").value = item.date || "";
+  byId("scheduleTime").value = item.time || "";
+  byId("scheduleVenue").value = item.venue || "";
+  byId("scheduleStatus").value = item.status || "Upcoming";
+}
+
+function populatePlayerForm(item) {
+  byId("playerId").value = item._id || "";
+  byId("playerName").value = item.playerName || "";
+  byId("playerTeam").value = item.team || "";
+  byId("playerPoints").value = Number(item.points) || 0;
+  byId("playerRebounds").value = Number(item.rebounds) || 0;
+  byId("playerAssists").value = Number(item.assists) || 0;
+  byId("playerGameDate").value = item.gameDate || "";
+  byId("playerImage").value = item.playerImage || "";
+}
+
+async function submitTeamForm(event) {
+  event.preventDefault();
+  try {
+    const teamId = byId("teamId").value;
+    const payload = {
+      name: byId("teamName").value.trim(),
+      logo: byId("teamLogo").value.trim(),
+      wins: Number(byId("teamWins").value) || 0,
+      losses: Number(byId("teamLosses").value) || 0,
+      points: Number(byId("teamPoints").value) || 0,
+    };
+
+    if (teamId) {
+      await apiFetch(`/teams/${teamId}`, { method: "PUT", body: JSON.stringify(payload) });
+    } else {
+      await apiFetch("/teams", { method: "POST", body: JSON.stringify(payload) });
+    }
+
+    resetTeamForm();
+    await loadAllData();
+    setMessage(el.globalMessage, "Team saved successfully.");
+  } catch (error) {
+    setMessage(el.globalMessage, error.message, true);
+  }
+}
+
+async function submitScheduleForm(event) {
+  event.preventDefault();
+  try {
+    const scheduleId = byId("scheduleId").value;
+    const payload = {
+      team1: byId("scheduleTeam1").value.trim(),
+      team2: byId("scheduleTeam2").value.trim(),
+      date: byId("scheduleDate").value,
+      time: byId("scheduleTime").value,
+      venue: byId("scheduleVenue").value.trim(),
+      status: byId("scheduleStatus").value.trim() || "Upcoming",
+    };
+
+    if (scheduleId) {
+      await apiFetch(`/schedule/${scheduleId}`, { method: "PUT", body: JSON.stringify(payload) });
+    } else {
+      await apiFetch("/schedule", { method: "POST", body: JSON.stringify(payload) });
+    }
+
+    resetScheduleForm();
+    await loadAllData();
+    setMessage(el.globalMessage, "Schedule saved successfully.");
+  } catch (error) {
+    setMessage(el.globalMessage, error.message, true);
+  }
+}
+
+async function submitPlayerForm(event) {
+  event.preventDefault();
+  try {
+    const playerId = byId("playerId").value;
+    const payload = {
+      playerName: byId("playerName").value.trim(),
+      team: byId("playerTeam").value.trim(),
+      points: Number(byId("playerPoints").value) || 0,
+      rebounds: Number(byId("playerRebounds").value) || 0,
+      assists: Number(byId("playerAssists").value) || 0,
+      gameDate: byId("playerGameDate").value,
+      playerImage: byId("playerImage").value.trim(),
+    };
+
+    if (playerId) {
+      await apiFetch(`/players/${playerId}`, { method: "PUT", body: JSON.stringify(payload) });
+    } else {
+      await apiFetch("/players", { method: "POST", body: JSON.stringify(payload) });
+    }
+
+    resetPlayerForm();
+    await loadAllData();
+    setMessage(el.globalMessage, "Player saved successfully.");
+  } catch (error) {
+    setMessage(el.globalMessage, error.message, true);
+  }
+}
+
+async function handleDelete(type, itemId) {
+  const ok = window.confirm("Delete this record?");
+  if (!ok) return;
+
+  try {
+    const pathByType = {
+      team: `/teams/${itemId}`,
+      schedule: `/schedule/${itemId}`,
+      player: `/players/${itemId}`,
+    };
+
+    await apiFetch(pathByType[type], { method: "DELETE" });
+    await loadAllData();
+    setMessage(el.globalMessage, "Record deleted.");
+  } catch (error) {
+    setMessage(el.globalMessage, error.message, true);
+  }
+}
+
+function handleRowAction(event) {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return;
+
+  const editType = target.getAttribute("data-edit");
+  const deleteType = target.getAttribute("data-delete");
+  const itemId = target.getAttribute("data-id");
+
+  if (!itemId) return;
+
+  if (editType === "team") {
+    const item = state.teams.find((row) => row._id === itemId);
+    if (item) {
+      switchView("standing");
+      populateTeamForm(item);
+    }
+    return;
+  }
+
+  if (editType === "schedule") {
+    const item = state.schedule.find((row) => row._id === itemId);
+    if (item) {
+      switchView("schedule");
+      populateScheduleForm(item);
+    }
+    return;
+  }
+
+  if (editType === "player") {
+    const item = state.players.find((row) => row._id === itemId);
+    if (item) {
+      switchView("players");
+      populatePlayerForm(item);
+    }
+    return;
+  }
+
+  if (deleteType) {
+    handleDelete(deleteType, itemId);
+  }
+}
+
+async function onLoginSubmit(event) {
+  event.preventDefault();
+
+  const apiBaseInput = normalizeApiBase(el.apiBaseInput.value);
+  const username = el.usernameInput.value.trim();
+  const password = el.passwordInput.value;
+
+  if (!apiBaseInput || !username || !password) {
+    setMessage(el.authMessage, "Please complete all fields.", true);
+    return;
+  }
+
+  state.apiBase = apiBaseInput;
+
+  try {
+    const response = await fetch(`${state.apiBase}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+
+    const payload = await response.json();
+
+    if (!response.ok) {
+      throw new Error(payload.message || "Login failed");
+    }
+
+    state.token = payload.token;
+    state.adminName = payload.admin && payload.admin.username ? payload.admin.username : username;
+
+    localStorage.setItem("LEAGUE_API_BASE_URL", state.apiBase);
+    localStorage.setItem("LEAGUE_ADMIN_TOKEN", state.token);
+    localStorage.setItem("LEAGUE_ADMIN_NAME", state.adminName);
+
+    await bootDashboard();
+  } catch (error) {
+    setMessage(el.authMessage, error.message, true);
+  }
+}
+
+function logout() {
+  localStorage.removeItem("LEAGUE_ADMIN_TOKEN");
+  localStorage.removeItem("LEAGUE_ADMIN_NAME");
+  state.token = "";
+  state.adminName = "";
+  el.dashboard.classList.add("hidden");
+  el.authShell.classList.remove("hidden");
+  setMessage(el.authMessage, "Logged out.");
+}
+
+async function bootDashboard() {
+  try {
+    el.authShell.classList.add("hidden");
+    el.dashboard.classList.remove("hidden");
+    el.adminMeta.textContent = `Signed in as ${state.adminName}`;
+    setMessage(el.authMessage, "");
+    setMessage(el.globalMessage, "Loading data...");
+
+    await loadAllData();
+    switchView(state.currentView);
+    setMessage(el.globalMessage, "Data loaded.");
+  } catch (error) {
+    setMessage(el.globalMessage, error.message, true);
+  }
+}
+
+function attachEvents() {
+  el.apiBaseInput.value = state.apiBase;
+
+  el.loginForm.addEventListener("submit", onLoginSubmit);
+  el.logoutBtn.addEventListener("click", logout);
+  el.refreshBtn.addEventListener("click", async () => {
+    try {
+      await loadAllData();
+      setMessage(el.globalMessage, "Data refreshed.");
+    } catch (error) {
+      setMessage(el.globalMessage, error.message, true);
+    }
+  });
+
+  el.sideNav.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+    const view = target.getAttribute("data-view");
+    if (!view) return;
+    switchView(view);
+  });
+
+  document.body.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) return;
+
+    const resetType = target.getAttribute("data-reset");
+    if (resetType === "team") resetTeamForm();
+    if (resetType === "schedule") resetScheduleForm();
+    if (resetType === "player") resetPlayerForm();
+
+    handleRowAction(event);
+  });
+
+  el.teamForm.addEventListener("submit", submitTeamForm);
+  el.scheduleForm.addEventListener("submit", submitScheduleForm);
+  el.playerForm.addEventListener("submit", submitPlayerForm);
+}
+
+attachEvents();
+
+if (state.token) {
+  bootDashboard();
+}

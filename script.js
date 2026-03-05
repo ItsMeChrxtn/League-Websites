@@ -28,6 +28,10 @@ let eventIndex = 0;
 let sliderIntervalId;
 let sliderVisibilityListenerAdded = false;
 let dataLoadError = "";
+const configuredApiBase = String(window.LEAGUE_API_BASE_URL || localStorage.getItem("LEAGUE_API_BASE_URL") || "")
+  .trim()
+  .replace(/\/+$/, "");
+const API_BASE_URL = configuredApiBase;
 
 const staticLeagueData = {
   schedule: [
@@ -85,7 +89,7 @@ const staticLeagueData = {
   ],
 };
 
-async function loadLeagueData(){
+function loadStaticLeagueData() {
   schedule = Array.isArray(staticLeagueData.schedule) ? staticLeagueData.schedule : [];
   standings = Array.isArray(staticLeagueData.standings) ? staticLeagueData.standings : [];
   bestPlayers = Array.isArray(staticLeagueData.bestPlayers) ? staticLeagueData.bestPlayers : [];
@@ -96,7 +100,75 @@ async function loadLeagueData(){
         return map;
       }, {})
     : {};
-  dataLoadError = "";
+}
+
+async function loadLeagueData(){
+  if (!API_BASE_URL) {
+    loadStaticLeagueData();
+    dataLoadError = "";
+    return;
+  }
+
+  try {
+    const [teamsResponse, scheduleResponse, playersResponse] = await Promise.all([
+      fetch(`${API_BASE_URL}/teams`),
+      fetch(`${API_BASE_URL}/schedule`),
+      fetch(`${API_BASE_URL}/players`),
+    ]);
+
+    if (!teamsResponse.ok || !scheduleResponse.ok || !playersResponse.ok) {
+      throw new Error("Live API request failed");
+    }
+
+    const [teamsData, scheduleData, playersData] = await Promise.all([
+      teamsResponse.json(),
+      scheduleResponse.json(),
+      playersResponse.json(),
+    ]);
+
+    const teams = Array.isArray(teamsData) ? teamsData : [];
+    const games = Array.isArray(scheduleData) ? scheduleData : [];
+    const players = Array.isArray(playersData) ? playersData : [];
+
+    standings = teams.map((team) => ({
+      team: String(team.name || "Unknown Team"),
+      wins: Number(team.wins) || 0,
+      losses: Number(team.losses) || 0,
+      points: Number(team.points) || 0,
+    }));
+
+    teamLogos = teams.reduce((map, team) => {
+      if (!team || !team.name || !team.logo) return map;
+      map[team.name] = team.logo;
+      return map;
+    }, {});
+
+    schedule = games.map((game) => ({
+      date: String(game.date || ""),
+      time: String(game.time || ""),
+      venue: String(game.venue || "Metroville Basketball Court"),
+      away: String(game.team1 || "Away Team"),
+      home: String(game.team2 || "Home Team"),
+      status: String(game.status || "Upcoming"),
+    }));
+
+    bestPlayers = players.map((player) => ({
+      player: String(player.playerName || "Best Player"),
+      team: String(player.team || "Unknown Team"),
+      points: Number(player.points) || 0,
+      assists: Number(player.assists) || 0,
+      rebounds: Number(player.rebounds) || 0,
+      steals: 0,
+      image_path: String(player.playerImage || "assets/logos/logo.png"),
+      game_date: String(player.gameDate || ""),
+    }));
+
+    dataLoadError = "";
+  } catch (error) {
+    console.error("Falling back to static league data:", error);
+    loadStaticLeagueData();
+    dataLoadError = "";
+  }
 }
 
 function formatScheduleDate(dateValue){

@@ -8,16 +8,23 @@ This project uses a static HTML + Tailwind frontend with a Node.js + Express RES
 - `models/`
 - `controllers/`
 - `routes/`
+- `middleware/`
 
 ## Environment variables
 - `PORT` (required in production, optional locally)
 - `MONGO_URI` (required)
+- `JWT_SECRET` (required for secure admin login)
+- `ADMIN_USERNAME` (admin username)
+- `ADMIN_PASSWORD` (admin password)
 
 Example `.env`:
 
 ```bash
 PORT=5000
 MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/league_dashboard?retryWrites=true&w=majority
+JWT_SECRET=change-this-secret
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=admin123
 ```
 
 ## Install and run
@@ -38,9 +45,9 @@ npm start
 ### Teams
 - `GET /api/teams`
 - `GET /api/teams/:id`
-- `POST /api/teams`
-- `PUT /api/teams/:id`
-- `DELETE /api/teams/:id`
+- `POST /api/teams` (admin token required)
+- `PUT /api/teams/:id` (admin token required)
+- `DELETE /api/teams/:id` (admin token required)
 
 Fields:
 - `name`
@@ -52,9 +59,9 @@ Fields:
 ### Schedule
 - `GET /api/schedule`
 - `GET /api/schedule/:id`
-- `POST /api/schedule`
-- `PUT /api/schedule/:id`
-- `DELETE /api/schedule/:id`
+- `POST /api/schedule` (admin token required)
+- `PUT /api/schedule/:id` (admin token required)
+- `DELETE /api/schedule/:id` (admin token required)
 
 Fields:
 - `team1`
@@ -67,9 +74,23 @@ Fields:
 ### Best Players
 - `GET /api/players`
 - `GET /api/players/:id`
-- `POST /api/players`
-- `PUT /api/players/:id`
-- `DELETE /api/players/:id`
+- `POST /api/players` (admin token required)
+- `PUT /api/players/:id` (admin token required)
+- `DELETE /api/players/:id` (admin token required)
+
+### Admin Auth
+- `POST /api/auth/login`
+
+Request body:
+
+```json
+{
+	"username": "admin",
+	"password": "admin123"
+}
+```
+
+Use returned token as `Authorization: Bearer <token>` for write operations.
 
 Fields:
 - `playerName`
@@ -83,6 +104,33 @@ Fields:
 ## Frontend fetch examples
 
 See `frontend-api-examples.js` for sample calls using `fetch()` + SweetAlert2 for add, update, and delete confirmation flows.
+
+## Admin Dashboard
+
+- URL: `/admin/index.html`
+- Features:
+	- Admin login
+	- Sidebar navigation (`Team Standing`, `Game Schedule`, `Best Player`)
+	- Full CRUD for each section
+
+Set API URL in login form as your Render backend API URL:
+
+`https://your-service-name.onrender.com/api`
+
+Default local login values if env vars are not set:
+
+- Username: `admin`
+- Password: `admin123`
+
+## Public Site Dynamic Data
+
+Public pages now load from API when `client-config.js` has a valid value. If no API is set or API fails, static sample data is used as fallback.
+
+Set in `client-config.js`:
+
+```js
+window.LEAGUE_API_BASE_URL = "https://your-service-name.onrender.com/api";
+```
 
 ## Deploy on Render
 

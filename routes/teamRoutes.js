@@ -6,10 +6,11 @@ const {
   updateTeam,
   deleteTeam,
 } = require("../controllers/teamController");
+const { protectAdmin } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-router.route("/").get(getTeams).post(createTeam);
-router.route("/:id").get(getTeamById).put(updateTeam).delete(deleteTeam);
+router.route("/").get(getTeams).post(protectAdmin, createTeam);
+router.route("/:id").get(getTeamById).put(protectAdmin, updateTeam).delete(protectAdmin, deleteTeam);
 
 module.exports = router;

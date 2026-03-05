@@ -6,6 +6,7 @@ const connectDB = require("./config/db");
 const teamRoutes = require("./routes/teamRoutes");
 const scheduleRoutes = require("./routes/scheduleRoutes");
 const bestPlayerRoutes = require("./routes/bestPlayerRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ app.get("/", (req, res) => {
 app.use("/api/teams", teamRoutes);
 app.use("/api/schedule", scheduleRoutes);
 app.use("/api/players", bestPlayerRoutes);
+app.use("/api/auth", authRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: "Route not found" });
