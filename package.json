@@ -4,7 +4,8 @@
   "private": true,
   "description": "Metroville League website migrated to Node.js + MongoDB for Vercel",
   "scripts": {
-    "start": "node -e \"console.log('Use: npx vercel dev')\""
+    "start": "node -e \"console.log('Use: npx vercel dev')\"",
+    "seed:db": "node scripts/seed-mongodb.js"
   },
   "dependencies": {
     "mongodb": "^6.18.0"

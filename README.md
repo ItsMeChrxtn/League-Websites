@@ -8,16 +8,29 @@ This project is migrated from PHP/MySQL to Node.js serverless functions and Mong
 - Database: MongoDB
 
 ## Environment variables
-- `MONGODB_URI` (optional for local testing, required for persistent cloud DB)
+- `MONGODB_URI` (required)
 - `MONGODB_DB` (optional, default: `league_dashboard`)
 
-If `MONGODB_URI` is not set, APIs automatically use local fallback data in [data/league-data.json](data/league-data.json).
+This project is now configured in **database-only mode**. All website and admin data comes from MongoDB.
 
 ## Local development
 ```bash
 npm install
 npx --yes vercel@latest dev --listen 3000
 ```
+
+## Seed initial database data
+```bash
+$env:MONGODB_URI="your-mongodb-uri"
+$env:MONGODB_DB="league_dashboard"
+npm run seed:db
+```
+
+The seed command resets and re-inserts data for these collections:
+- `game_schedules`
+- `team_standings`
+- `best_players`
+- `team_logos`
 
 ## Main API routes
 - `GET /api/league-data`
@@ -32,7 +45,7 @@ npx --yes vercel@latest dev --listen 3000
 4. Deploy.
 
 ### Recommended production setup
-- Set `MONGODB_URI` in Vercel (`Project Settings` → `Environment Variables`) so admin create/update/delete persists.
+- Set `MONGODB_URI` in Vercel (`Project Settings` → `Environment Variables`).
 - Set `MONGODB_DB` (optional). Default is `league_dashboard`.
 - Redeploy after adding or editing environment variables.
 
@@ -54,3 +67,9 @@ npx --yes vercel@latest --prod
 - Open `/api/league-data` and verify you get `{ "ok": true, ... }`.
 - Open `/admin/` and test add/edit/delete in each module.
 - Confirm home pages load: `/`, `/game-schedule.html`, `/team-standing.html`, `/best-player.html`.
+
+### If MongoDB TLS error appears in Vercel
+- In MongoDB Atlas, go to `Network Access` and temporarily allow `0.0.0.0/0`.
+- Verify your `MONGODB_URI` uses the Atlas Driver URI format (`mongodb+srv://...`).
+- If your DB password has special chars (`@`, `#`, `%`, `/`, `?`, `:`), URL-encode it.
+- Redeploy after updating env vars.
