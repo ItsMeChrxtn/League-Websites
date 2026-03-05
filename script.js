@@ -29,37 +29,74 @@ let sliderIntervalId;
 let sliderVisibilityListenerAdded = false;
 let dataLoadError = "";
 
+const staticLeagueData = {
+  schedule: [
+    { date: "2026-03-08", time: "18:30", venue: "Downtown Arena", home: "Falcons", away: "Titans" },
+    { date: "2026-03-09", time: "19:00", venue: "Metro Sports Hub", home: "Sharks", away: "Wolves" },
+    { date: "2026-03-10", time: "20:00", venue: "Riverside Court", home: "Hawks", away: "Kings" },
+  ],
+  standings: [
+    { team: "Falcons", wins: 7, losses: 2 },
+    { team: "Titans", wins: 6, losses: 3 },
+    { team: "Wolves", wins: 5, losses: 4 },
+    { team: "Sharks", wins: 4, losses: 5 },
+  ],
+  bestPlayers: [
+    {
+      player: "J. Ramirez",
+      team: "Falcons",
+      points: 31,
+      assists: 8,
+      rebounds: 9,
+      steals: 2,
+      image_path: "assets/players/sample-player-1.png",
+      game_date: "2026-03-01",
+    },
+    {
+      player: "M. Santos",
+      team: "Titans",
+      points: 28,
+      assists: 6,
+      rebounds: 10,
+      steals: 1,
+      image_path: "assets/players/sample-player-2.png",
+      game_date: "2026-03-02",
+    },
+    {
+      player: "K. Dela Cruz",
+      team: "Wolves",
+      points: 25,
+      assists: 9,
+      rebounds: 7,
+      steals: 3,
+      image_path: "assets/players/sample-player-3.png",
+      game_date: "2026-03-03",
+    },
+  ],
+  teamLogos: [
+    { team: "Falcons", logo_path: "assets/logos/eldelubyo.png" },
+    { team: "Titans", logo_path: "assets/logos/homecourt.jpg" },
+    { team: "Sharks", logo_path: "assets/logos/micara.png" },
+    { team: "Wolves", logo_path: "assets/logos/MTRVL.jpg" },
+    { team: "Hawks", logo_path: "assets/logos/segway.jpg" },
+    { team: "Kings", logo_path: "assets/logos/Stampede.jpg" },
+    { team: "Stampede", logo_path: "assets/logos/Stampede.jpg" },
+    { team: "Westdale", logo_path: "assets/logos/westdale.jpg" },
+  ],
+};
+
 async function loadLeagueData(){
-  try {
-    const response = await fetch("/api/league-data", { cache: "no-store" });
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const payload = await response.json();
-    if (!payload || payload.ok !== true) {
-      throw new Error("API response is not successful.");
-    }
-
-    schedule = Array.isArray(payload.schedule) ? payload.schedule : [];
-    standings = Array.isArray(payload.standings) ? payload.standings : [];
-    bestPlayers = Array.isArray(payload.bestPlayers) ? payload.bestPlayers : [];
-    teamLogos = Array.isArray(payload.teamLogos)
-      ? payload.teamLogos.reduce((map, row) => {
-          if (!row || !row.team || !row.logo_path) return map;
-          map[row.team] = row.logo_path;
-          return map;
-        }, {})
-      : {};
-    dataLoadError = "";
-  } catch (error) {
-    schedule = [];
-    standings = [];
-    bestPlayers = [];
-    teamLogos = {};
-    dataLoadError = "Unable to load data from database.";
-    console.error("Failed to fetch league data", error);
-  }
+  schedule = Array.isArray(staticLeagueData.schedule) ? staticLeagueData.schedule : [];
+  standings = Array.isArray(staticLeagueData.standings) ? staticLeagueData.standings : [];
+  bestPlayers = Array.isArray(staticLeagueData.bestPlayers) ? staticLeagueData.bestPlayers : [];
+  teamLogos = Array.isArray(staticLeagueData.teamLogos)
+    ? staticLeagueData.teamLogos.reduce((map, row) => {
+        if (!row || !row.team || !row.logo_path) return map;
+        map[row.team] = row.logo_path;
+        return map;
+      }, {})
+    : {};
+  dataLoadError = "";
 }
 
 function formatScheduleDate(dateValue){

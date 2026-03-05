@@ -1,75 +1,101 @@
-# Metroville League Website (Node.js + MongoDB)
+# Basketball League Website (Express + MongoDB)
 
-This project is migrated from PHP/MySQL to Node.js serverless functions and MongoDB, ready for Vercel deployment.
+This project uses a static HTML + Tailwind frontend with a Node.js + Express REST API backend and MongoDB via Mongoose.
 
-## Stack
-- Frontend: static HTML/CSS/JS
-- Backend: Vercel Serverless Functions (`api/*.js`)
-- Database: MongoDB
+## Backend structure
+- `server.js`
+- `config/db.js`
+- `models/`
+- `controllers/`
+- `routes/`
 
 ## Environment variables
-- `MONGODB_URI` (required)
-- `MONGODB_DB` (optional, default: `league_dashboard`)
+- `PORT` (required in production, optional locally)
+- `MONGO_URI` (required)
 
-This project is now configured in **database-only mode**. All website and admin data comes from MongoDB.
+Example `.env`:
 
-## Local development
+```bash
+PORT=5000
+MONGO_URI=mongodb+srv://username:password@cluster.mongodb.net/league_dashboard?retryWrites=true&w=majority
+```
+
+## Install and run
+
 ```bash
 npm install
-npx --yes vercel@latest dev --listen 3000
+npm run dev
 ```
 
-## Seed initial database data
+Production run:
+
 ```bash
-$env:MONGODB_URI="your-mongodb-uri"
-$env:MONGODB_DB="league_dashboard"
-npm run seed:db
+npm start
 ```
 
-The seed command resets and re-inserts data for these collections:
-- `game_schedules`
-- `team_standings`
-- `best_players`
-- `team_logos`
+## REST API
 
-## Main API routes
-- `GET /api/league-data`
-- `GET|POST|PUT|DELETE /api/admin/schedule`
-- `GET|POST|PUT|DELETE /api/admin/standing`
-- `GET|POST|PUT|DELETE /api/admin/player`
+### Teams
+- `GET /api/teams`
+- `GET /api/teams/:id`
+- `POST /api/teams`
+- `PUT /api/teams/:id`
+- `DELETE /api/teams/:id`
 
-## Deploy to Vercel
-1. Push this project to GitHub.
-2. Import the repo in Vercel.
-3. Set `MONGODB_URI` and `MONGODB_DB` in Vercel project settings.
-4. Deploy.
+Fields:
+- `name`
+- `logo`
+- `wins`
+- `losses`
+- `points`
 
-### Recommended production setup
-- Set `MONGODB_URI` in Vercel (`Project Settings` → `Environment Variables`).
-- Set `MONGODB_DB` (optional). Default is `league_dashboard`.
-- Redeploy after adding or editing environment variables.
+### Schedule
+- `GET /api/schedule`
+- `GET /api/schedule/:id`
+- `POST /api/schedule`
+- `PUT /api/schedule/:id`
+- `DELETE /api/schedule/:id`
 
-### Vercel CLI deploy (alternative)
-```bash
-npm install
-npx --yes vercel@latest login
-npx --yes vercel@latest
-```
+Fields:
+- `team1`
+- `team2`
+- `date`
+- `time`
+- `venue`
+- `status`
 
-Then set env vars:
-```bash
-npx --yes vercel@latest env add MONGODB_URI production
-npx --yes vercel@latest env add MONGODB_DB production
-npx --yes vercel@latest --prod
-```
+### Best Players
+- `GET /api/players`
+- `GET /api/players/:id`
+- `POST /api/players`
+- `PUT /api/players/:id`
+- `DELETE /api/players/:id`
 
-### Quick post-deploy checks
-- Open `/api/league-data` and verify you get `{ "ok": true, ... }`.
-- Open `/admin/` and test add/edit/delete in each module.
-- Confirm home pages load: `/`, `/game-schedule.html`, `/team-standing.html`, `/best-player.html`.
+Fields:
+- `playerName`
+- `team`
+- `points`
+- `rebounds`
+- `assists`
+- `gameDate`
+- `playerImage`
 
-### If MongoDB TLS error appears in Vercel
-- In MongoDB Atlas, go to `Network Access` and temporarily allow `0.0.0.0/0`.
-- Verify your `MONGODB_URI` uses the Atlas Driver URI format (`mongodb+srv://...`).
-- If your DB password has special chars (`@`, `#`, `%`, `/`, `?`, `:`), URL-encode it.
-- Redeploy after updating env vars.
+## Frontend fetch examples
+
+See `frontend-api-examples.js` for sample calls using `fetch()` + SweetAlert2 for add, update, and delete confirmation flows.
+
+## Deploy on Render
+
+1. Push this repository to GitHub.
+2. Create a new **Web Service** in Render.
+3. Configure:
+	- Build command: `npm install`
+	- Start command: `npm start`
+4. Add environment variables in Render:
+	- `PORT` = `10000` (or leave Render default)
+	- `MONGO_URI` = your MongoDB connection string
+5. Deploy.
+
+After deployment, use your Render URL as frontend API base URL, for example:
+
+`https://your-app-name.onrender.com/api`
