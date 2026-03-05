@@ -16,7 +16,12 @@ async function getDb() {
   }
 
   if (!cachedClient) {
-    cachedClient = new MongoClient(mongoUri);
+    cachedClient = new MongoClient(mongoUri, {
+      serverSelectionTimeoutMS: 3000,
+      connectTimeoutMS: 5000,
+      socketTimeoutMS: 10000,
+      maxPoolSize: 10,
+    });
   }
 
   if (!cachedClient.topology?.isConnected()) {
