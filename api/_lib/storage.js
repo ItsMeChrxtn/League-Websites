@@ -110,6 +110,17 @@ function isMongoEnabled() {
   return Boolean(process.env.MONGODB_URI);
 }
 
+async function tryMongo(operationName, action) {
+  try {
+    const db = await getDb();
+    const result = await action(db);
+    return { ok: true, result };
+  } catch (error) {
+    console.error(`[storage] MongoDB ${operationName} failed, using local fallback:`, error?.message || error);
+    return { ok: false, error };
+  }
+}
+
 async function ensureLocalFile() {
   try {
     await fs.access(DATA_FILE_PATH);
@@ -135,9 +146,14 @@ function toMongoSort(sort) {
 
 async function listRecords(collectionName, sort) {
   if (isMongoEnabled()) {
-    const db = await getDb();
-    const rows = await db.collection(collectionName).find({}).sort(toMongoSort(sort)).toArray();
-    return rows.map(({ _id, ...rest }) => ({ id: _id.toString(), ...rest }));
+    const mongoResult = await tryMongo("listRecords", async (db) => {
+      const rows = await db.collection(collectionName).find({}).sort(toMongoSort(sort)).toArray();
+      return rows.map(({ _id, ...rest }) => ({ id: _id.toString(), ...rest }));
+    });
+
+    if (mongoResult.ok) {
+      return mongoResult.result;
+    }
   }
 
   const data = await readLocalData();
@@ -150,9 +166,14 @@ async function listRecords(collectionName, sort) {
 
 async function createRecord(collectionName, payload) {
   if (isMongoEnabled()) {
-    const db = await getDb();
-    const result = await db.collection(collectionName).insertOne(payload);
-    return { id: result.insertedId.toString(), ...payload };
+    const mongoResult = await tryMongo("createRecord", async (db) => {
+      const result = await db.collection(collectionName).insertOne(payload);
+      return { id: result.insertedId.toString(), ...payload };
+    });
+
+    if (mongoResult.ok) {
+      return mongoResult.result;
+    }
   }
 
   const data = await readLocalData();
@@ -172,6 +193,10 @@ function isValidId(id) {
     return false;
   }
 
+  if (id.startsWith("local_")) {
+    return true;
+  }
+
   if (!isMongoEnabled()) {
     return true;
   }
@@ -184,10 +209,15 @@ async function updateRecord(collectionName, id, payload) {
     return { ok: false, reason: "invalid-id" };
   }
 
-  if (isMongoEnabled()) {
-    const db = await getDb();
-    const result = await db.collection(collectionName).updateOne({ _id: new ObjectId(id) }, { $set: payload });
-    return { ok: result.matchedCount > 0, reason: result.matchedCount > 0 ? "updated" : "not-found" };
+  if (isMongoEnabled() && ObjectId.isValid(id)) {
+    const mongoResult = await tryMongo("updateRecord", async (db) => {
+      const result = await db.collection(collectionName).updateOne({ _id: new ObjectId(id) }, { $set: payload });
+      return { ok: result.matchedCount > 0, reason: result.matchedCount > 0 ? "updated" : "not-found" };
+    });
+
+    if (mongoResult.ok) {
+      return mongoResult.result;
+    }
   }
 
   const data = await readLocalData();
@@ -210,10 +240,15 @@ async function deleteRecord(collectionName, id) {
     return { ok: false, reason: "invalid-id" };
   }
 
-  if (isMongoEnabled()) {
-    const db = await getDb();
-    const result = await db.collection(collectionName).deleteOne({ _id: new ObjectId(id) });
-    return { ok: result.deletedCount > 0, reason: result.deletedCount > 0 ? "deleted" : "not-found" };
+  if (isMongoEnabled() && ObjectId.isValid(id)) {
+    const mongoResult = await tryMongo("deleteRecord", async (db) => {
+      const result = await db.collection(collectionName).deleteOne({ _id: new ObjectId(id) });
+      return { ok: result.deletedCount > 0, reason: result.deletedCount > 0 ? "deleted" : "not-found" };
+    });
+
+    if (mongoResult.ok) {
+      return mongoResult.result;
+    }
   }
 
   const data = await readLocalData();
