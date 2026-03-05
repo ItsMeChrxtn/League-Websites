@@ -2,10 +2,15 @@ const { MongoClient, ObjectId } = require("mongodb");
 
 let cachedClient = null;
 let cachedDb = null;
+let cachedDbPromise = null;
 
 async function getDb() {
   if (cachedDb) {
     return cachedDb;
+  }
+
+  if (cachedDbPromise) {
+    return cachedDbPromise;
   }
 
   const mongoUri = process.env.MONGODB_URI;
@@ -24,12 +29,18 @@ async function getDb() {
     });
   }
 
-  if (!cachedClient.topology?.isConnected()) {
+  cachedDbPromise = (async () => {
     await cachedClient.connect();
-  }
+    cachedDb = cachedClient.db(databaseName);
+    return cachedDb;
+  })();
 
-  cachedDb = cachedClient.db(databaseName);
-  return cachedDb;
+  try {
+    return await cachedDbPromise;
+  } catch (error) {
+    cachedDbPromise = null;
+    throw error;
+  }
 }
 
 function toObjectId(id) {
