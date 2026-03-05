@@ -26,6 +26,8 @@ async function getDb() {
       connectTimeoutMS: 5000,
       socketTimeoutMS: 10000,
       maxPoolSize: 10,
+      tls: true,
+      family: 4,
     });
   }
 
