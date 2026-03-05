@@ -4,6 +4,17 @@ let cachedClient = null;
 let cachedDb = null;
 let cachedDbPromise = null;
 
+function createClient(mongoUri) {
+  return new MongoClient(mongoUri, {
+    serverSelectionTimeoutMS: 3000,
+    connectTimeoutMS: 5000,
+    socketTimeoutMS: 10000,
+    maxPoolSize: 10,
+    tls: true,
+    family: 4,
+  });
+}
+
 async function getDb() {
   if (cachedDb) {
     return cachedDb;
@@ -21,20 +32,20 @@ async function getDb() {
   }
 
   if (!cachedClient) {
-    cachedClient = new MongoClient(mongoUri, {
-      serverSelectionTimeoutMS: 3000,
-      connectTimeoutMS: 5000,
-      socketTimeoutMS: 10000,
-      maxPoolSize: 10,
-      tls: true,
-      family: 4,
-    });
+    cachedClient = createClient(mongoUri);
   }
 
   cachedDbPromise = (async () => {
-    await cachedClient.connect();
-    cachedDb = cachedClient.db(databaseName);
-    return cachedDb;
+    try {
+      await cachedClient.connect();
+      cachedDb = cachedClient.db(databaseName);
+      return cachedDb;
+    } catch (firstError) {
+      cachedClient = createClient(mongoUri);
+      await cachedClient.connect();
+      cachedDb = cachedClient.db(databaseName);
+      return cachedDb;
+    }
   })();
 
   try {
