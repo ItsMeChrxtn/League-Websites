@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard | League Management</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #060b18;
+      --panel: #0f172a;
+      --panel-soft: #111c32;
+      --line: #273449;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --brand: #2563eb;
+      --danger: #ef4444;
+      --success: #22c55e;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 8% -10%, rgba(59, 130, 246, 0.24), transparent 30%),
+        radial-gradient(circle at 95% 10%, rgba(245, 158, 11, 0.15), transparent 26%),
+        linear-gradient(160deg, #020617 0%, #060b18 46%, #0b1224 100%);
+    }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+    }
+
+    .sidebar {
+      border-right: 1px solid rgba(100, 116, 139, 0.26);
+      background: rgba(2, 6, 23, 0.72);
+      backdrop-filter: blur(10px);
+      padding: 20px 16px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(100, 116, 139, 0.32);
+      background: rgba(15, 23, 42, 0.72);
+    }
+
+    .brand-logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      border: 1px solid rgba(96, 165, 250, 0.45);
+      background: linear-gradient(145deg, #172554, #0f172a);
+      display: grid;
+      place-items: center;
+      font-size: 1.15rem;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 0.98rem;
+      color: #f8fafc;
+    }
+
+    .brand p {
+      margin: 3px 0 0;
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .side-nav {
+      display: grid;
+      gap: 8px;
+    }
+
+    .side-link {
+      border: 1px solid rgba(100, 116, 139, 0.35);
+      background: rgba(15, 23, 42, 0.82);
+      color: #cbd5e1;
+      text-decoration: none;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-weight: 600;
+      font-size: 0.92rem;
+      transition: 0.2s ease;
+    }
+
+    .side-link:hover {
+      color: #fff;
+      border-color: rgba(96, 165, 250, 0.65);
+      transform: translateY(-1px);
+    }
+
+    .side-link.active {
+      color: #dbeafe;
+      border-color: rgba(147, 197, 253, 0.75);
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.45), rgba(14, 116, 144, 0.35));
+    }
+
+    .sidebar-foot {
+      margin-top: auto;
+    }
+
+    .back-link {
+      width: 100%;
+      display: inline-flex;
+      justify-content: center;
+      text-decoration: none;
+      color: #cbd5e1;
+      border: 1px solid rgba(100, 116, 139, 0.38);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: rgba(15, 23, 42, 0.7);
+      font-weight: 600;
+      font-size: 0.86rem;
+    }
+
+    .main {
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+      align-content: start;
+    }
+
+    .topbar {
+      border: 1px solid rgba(100, 116, 139, 0.34);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.86), rgba(15, 23, 42, 0.72));
+      box-shadow: 0 14px 32px rgba(2, 6, 23, 0.38);
+      padding: 16px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .topbar h2 {
+      margin: 0;
+      font-size: 1.35rem;
+      color: #f8fafc;
+    }
+
+    .topbar p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .stats {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      border: 1px solid rgba(100, 116, 139, 0.36);
+      background: rgba(2, 6, 23, 0.48);
+      border-radius: 999px;
+      padding: 7px 11px;
+      font-size: 0.8rem;
+      color: #bfdbfe;
+      font-weight: 700;
+    }
+
+    .panel {
+      border: 1px solid rgba(100, 116, 139, 0.35);
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.78));
+      box-shadow: 0 16px 34px rgba(2, 6, 23, 0.38);
+      padding: 18px;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .panel-head h3 {
+      margin: 0;
+      color: #f8fafc;
+      font-size: 1.08rem;
+    }
+
+    .panel-head p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .btn-primary,
+    .btn-muted,
+    .btn-danger {
+      border-radius: 10px;
+      border: 1px solid transparent;
+      padding: 8px 12px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.2s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+
+    .btn-primary {
+      border-color: rgba(96, 165, 250, 0.7);
+      background: linear-gradient(120deg, #1d4ed8, #2563eb 55%, #0ea5e9);
+      color: #fff;
+      box-shadow: 0 9px 18px rgba(37, 99, 235, 0.3);
+    }
+
+    .btn-muted {
+      border-color: rgba(100, 116, 139, 0.5);
+      background: rgba(15, 23, 42, 0.86);
+      color: #cbd5e1;
+    }
+
+    .btn-danger {
+      border-color: rgba(252, 165, 165, 0.58);
+      background: rgba(127, 29, 29, 0.35);
+      color: #fecaca;
+    }
+
+    .btn-primary:hover,
+    .btn-muted:hover,
+    .btn-danger:hover {
+      transform: translateY(-1px);
+    }
+
+    .table-wrap {
+      overflow: auto;
+      border: 1px solid rgba(100, 116, 139, 0.28);
+      border-radius: 12px;
+      background: rgba(2, 6, 23, 0.3);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+      color: #e2e8f0;
+      font-size: 0.9rem;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 10px 9px;
+      border-bottom: 1px solid rgba(100, 116, 139, 0.25);
+    }
+
+    th {
+      color: #93c5fd;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      font-weight: 700;
+    }
+
+    tbody tr:hover {
+      background: rgba(59, 130, 246, 0.08);
+    }
+
+    .actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .preview {
+      display: block;
+      max-width: 76px;
+      border-radius: 8px;
+      border: 1px solid rgba(100, 116, 139, 0.5);
+      background: rgba(2, 6, 23, 0.6);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(2, 6, 23, 0.72);
+      backdrop-filter: blur(5px);
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-card {
+      width: min(700px, 100%);
+      max-height: 92vh;
+      overflow: auto;
+      border-radius: 16px;
+      border: 1px solid rgba(100, 116, 139, 0.4);
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.97), rgba(15, 23, 42, 0.93));
+      box-shadow: 0 20px 40px rgba(2, 6, 23, 0.5);
+      padding: 18px;
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .modal-head h4 {
+      margin: 0;
+      font-size: 1.06rem;
+      color: #f8fafc;
+    }
+
+    .close-btn {
+      border: 1px solid rgba(100, 116, 139, 0.5);
+      background: rgba(15, 23, 42, 0.85);
+      color: #cbd5e1;
+      border-radius: 10px;
+      width: 34px;
+      height: 34px;
+      cursor: pointer;
+      font-size: 1.08rem;
+      line-height: 1;
+    }
+
+    form label {
+      display: block;
+      margin: 10px 0 6px;
+      color: #cbd5e1;
+      font-size: 0.86rem;
+      font-weight: 600;
+    }
+
+    form input,
+    form select {
+      width: 100%;
+      border: 1px solid rgba(100, 116, 139, 0.52);
+      border-radius: 10px;
+      background: rgba(2, 6, 23, 0.5);
+      color: #f8fafc;
+      padding: 9px 10px;
+      outline: none;
+      font-size: 0.92rem;
+      transition: 0.2s ease;
+    }
+
+    form input:focus,
+    form select:focus {
+      border-color: rgba(96, 165, 250, 0.86);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+    }
+
+    .form-actions {
+      margin-top: 14px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .muted { color: var(--muted); }
+
+    @media (max-width: 980px) {
+      .app {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        position: static;
+        height: auto;
+      }
+    }
+
+    :root {
+      --bg: #f3f7ff;
+      --panel: #ffffff;
+      --panel-soft: #f8fbff;
+      --line: #d9e5f6;
+      --text: #0f172a;
+      --muted: #64748b;
+      --brand: #2563eb;
+      --danger: #dc2626;
+      --success: #16a34a;
+    }
+
+    body {
+      color: var(--text);
+      background:
+        radial-gradient(circle at 6% -10%, rgba(59, 130, 246, 0.15), transparent 35%),
+        radial-gradient(circle at 95% 10%, rgba(14, 165, 233, 0.1), transparent 30%),
+        linear-gradient(160deg, #eef4ff 0%, #f7faff 46%, #edf4ff 100%);
+    }
+
+    .sidebar {
+      border-right: 1px solid #d8e5f8;
+      background: #f7fbff;
+      backdrop-filter: none;
+      box-shadow: 8px 0 22px rgba(37, 99, 235, 0.08);
+    }
+
+    .brand {
+      border-color: #dbe8fb;
+      background: #ffffff;
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.08);
+    }
+
+    .brand-logo {
+      border-color: #bfdbfe;
+      background: linear-gradient(145deg, #eff6ff, #dbeafe);
+    }
+
+    .brand h1 {
+      color: #1e293b;
+    }
+
+    .side-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-color: #d6e3f6;
+      background: #ffffff;
+      color: #334155;
+      box-shadow: 0 5px 12px rgba(15, 23, 42, 0.04);
+    }
+
+    .side-link-icon {
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #eef4ff;
+      border: 1px solid #dbe7fb;
+      font-size: 0.95rem;
+      flex: 0 0 30px;
+    }
+
+    .side-link-label {
+      line-height: 1;
+    }
+
+    .side-link:hover {
+      color: #0f172a;
+      border-color: #93c5fd;
+      background: #f8fbff;
+    }
+
+    .side-link.active {
+      color: #1d4ed8;
+      border-color: #bfdbfe;
+      background: #eaf3ff;
+    }
+
+    .side-link.active .side-link-icon {
+      background: #dbeafe;
+      border-color: #bfdbfe;
+    }
+
+    .back-link {
+      color: #334155;
+      border-color: #d6e3f6;
+      background: #ffffff;
+    }
+
+    .topbar,
+    .panel {
+      border-color: #d6e3f6;
+      background: #ffffff;
+      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.08);
+    }
+
+    .topbar h2,
+    .panel-head h3 {
+      color: #0f172a;
+    }
+
+    .topbar p,
+    .panel-head p {
+      color: #64748b;
+    }
+
+    .stat-pill {
+      border-color: #cfe0f7;
+      background: #f4f8ff;
+      color: #1d4ed8;
+    }
+
+    .btn-primary {
+      border-color: #93c5fd;
+      background: linear-gradient(120deg, #2563eb, #3b82f6 58%, #38bdf8);
+      color: #fff;
+      box-shadow: 0 8px 18px rgba(37, 99, 235, 0.2);
+    }
+
+    .btn-muted {
+      border-color: #d6e3f6;
+      background: #f8fbff;
+      color: #334155;
+    }
+
+    .btn-danger {
+      border-color: #fbcaca;
+      background: #fff3f3;
+      color: #b91c1c;
+    }
+
+    .table-wrap {
+      border-color: #d6e3f6;
+      background: #ffffff;
+    }
+
+    table {
+      color: #1e293b;
+    }
+
+    th {
+      color: #2563eb;
+    }
+
+    th,
+    td {
+      border-bottom-color: #e2ebf8;
+    }
+
+    tbody tr:hover {
+      background: #f5f9ff;
+    }
+
+    .preview {
+      border-color: #d6e3f6;
+      background: #f8fbff;
+    }
+
+    .modal {
+      background: rgba(15, 23, 42, 0.28);
+      backdrop-filter: blur(3px);
+    }
+
+    .modal-card {
+      border-color: #d6e3f6;
+      background: #ffffff;
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
+    }
+
+    .modal-head h4 {
+      color: #0f172a;
+    }
+
+    .close-btn {
+      border-color: #d6e3f6;
+      background: #f8fbff;
+      color: #334155;
+    }
+
+    form label {
+      color: #334155;
+    }
+
+    form input,
+    form select {
+      border-color: #d6e3f6;
+      background: #ffffff;
+      color: #0f172a;
+    }
+
+    form input:focus,
+    form select:focus {
+      border-color: #60a5fa;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">🏀</div>
+        <div>
+          <h1>MBL Admin Console</h1>
+          <p>Operations Center</p>
+        </div>
+      </div>
+
+      <nav class="side-nav">
+        <a id="tab-schedule" class="side-link" href="?section=schedule">
+          <span class="side-link-icon">📅</span>
+          <span class="side-link-label">Game Schedule</span>
+        </a>
+        <a id="tab-standing" class="side-link" href="?section=standing">
+          <span class="side-link-icon">🏆</span>
+          <span class="side-link-label">Team Standing</span>
+        </a>
+        <a id="tab-player" class="side-link" href="?section=player">
+          <span class="side-link-icon">⭐</span>
+          <span class="side-link-label">Best Player</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-foot">
+        <a class="back-link" href="../index.html">← Back to Website</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h2 id="topbarTitle">League Admin Dashboard</h2>
+          <p id="topbarSubtitle">Manage records with professional workflow tools.</p>
+        </div>
+        <div class="stats">
+          <span class="stat-pill">Schedules: <strong id="scheduleCount">0</strong></span>
+          <span class="stat-pill">Standings: <strong id="standingCount">0</strong></span>
+          <span class="stat-pill">Players: <strong id="playerCount">0</strong></span>
+        </div>
+      </header>
+
+      <div id="globalMessage" class="hidden"></div>
+
+      <section id="list-schedule" class="panel hidden">
+        <div class="panel-head">
+          <div>
+            <h3>Game Schedule Records</h3>
+            <p>Create, update, and maintain game schedules.</p>
+          </div>
+          <button id="addScheduleBtn" class="btn-primary" type="button">+ Add Schedule</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Match</th>
+                <th>Venue</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="scheduleRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="list-standing" class="panel hidden">
+        <div class="panel-head">
+          <div>
+            <h3>Team Standing Records</h3>
+            <p>Manage standings, wins, and losses.</p>
+          </div>
+          <button id="addStandingBtn" class="btn-primary" type="button">+ Add Standing</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Team</th>
+                <th>Wins</th>
+                <th>Losses</th>
+                <th>Win %</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="standingRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="list-player" class="panel hidden">
+        <div class="panel-head">
+          <div>
+            <h3>Best Player Records</h3>
+            <p>Maintain player stats and profile photos.</p>
+          </div>
+          <button id="addPlayerBtn" class="btn-primary" type="button">+ Add Player</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Player</th>
+                <th>Team</th>
+                <th>PTS</th>
+                <th>AST</th>
+                <th>REB</th>
+                <th>STL</th>
+                <th>Photo</th>
+                <th>Game Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="playerRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="formModal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h4 id="modalTitle">Add Record</h4>
+        <button id="closeModalBtn" class="close-btn" type="button" aria-label="Close">×</button>
+      </div>
+
+      <div id="form-schedule" class="form-section hidden">
+        <form id="scheduleForm">
+          <input type="hidden" name="id" value="" />
+
+          <label for="game_date">Game Date</label>
+          <input id="game_date" type="date" name="game_date" required />
+
+          <label for="game_time">Game Time</label>
+          <input id="game_time" type="time" name="game_time" required />
+
+          <label for="venue">Venue</label>
+          <input id="venue" type="text" name="venue" maxlength="120" required />
+
+          <label for="away_team">Away Team</label>
+          <select id="away_team" name="away_team" required></select>
+
+          <label for="home_team">Home Team</label>
+          <select id="home_team" name="home_team" required></select>
+
+          <div class="form-actions">
+            <button class="btn-muted" type="button" id="scheduleCancelEdit">Cancel</button>
+            <button class="btn-primary" type="submit">Save</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="form-standing" class="form-section hidden">
+        <form id="standingForm">
+          <input type="hidden" name="id" value="" />
+
+          <label for="team">Team Name</label>
+          <input id="team" type="text" name="team" maxlength="80" required />
+
+          <label for="wins">Wins</label>
+          <input id="wins" type="number" name="wins" min="0" required />
+
+          <label for="losses">Losses</label>
+          <input id="losses" type="number" name="losses" min="0" required />
+
+          <div class="form-actions">
+            <button class="btn-muted" type="button" id="standingCancelEdit">Cancel</button>
+            <button class="btn-primary" type="submit">Save</button>
+          </div>
+        </form>
+      </div>
+
+      <div id="form-player" class="form-section hidden">
+        <form id="playerForm">
+          <input type="hidden" name="id" value="" />
+          <input type="hidden" name="image_path" value="" />
+
+          <label for="player_name">Player Name</label>
+          <input id="player_name" type="text" name="player_name" maxlength="100" required />
+
+          <label for="player_team">Team</label>
+          <input id="player_team" type="text" name="team" maxlength="80" required />
+
+          <label for="points">Points</label>
+          <input id="points" type="number" name="points" min="0" required />
+
+          <label for="assists">Assists</label>
+          <input id="assists" type="number" name="assists" min="0" required />
+
+          <label for="rebounds">Rebounds</label>
+          <input id="rebounds" type="number" name="rebounds" min="0" required />
+
+          <label for="steals">Steals</label>
+          <input id="steals" type="number" name="steals" min="0" required />
+
+          <label for="player_image">Player Photo</label>
+          <input id="player_image" type="file" accept="image/png,image/jpeg,image/webp" />
+          <img id="playerImagePreview" class="preview hidden" alt="Player image preview" />
+
+          <label for="player_game_date">Game Date (optional)</label>
+          <input id="player_game_date" type="date" name="game_date" />
+
+          <div class="form-actions">
+            <button class="btn-muted" type="button" id="playerCancelEdit">Cancel</button>
+            <button class="btn-primary" type="submit">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

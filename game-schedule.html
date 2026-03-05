@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Game Schedule | Basketball League 2026</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body data-page="schedule" class="min-h-screen antialiased">
+  <header class="league-nav">
+    <div class="container-main nav-inner">
+      <div class="brand-wrap">
+        <div class="logo-box">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/7/7a/Basketball.png" alt="Metroville Basketball League logo" onerror="this.onerror=null;this.src='assets/logos/logo.png';" />
+          <span class="logo-overlay">MBL</span>
+        </div>
+        <div class="brand-copy">
+          <h1>Metroville Basketball League 2026</h1>
+          <p>Official League Portal</p>
+        </div>
+      </div>
+      <nav class="nav-links">
+        <a href="index.html" data-link="home">Home</a>
+        <a href="game-schedule.html" data-link="schedule">Game Schedule</a>
+        <a href="team-standing.html" data-link="standing">Team Standing</a>
+        <a href="best-player.html" data-link="players">Best Player</a>
+      </nav>
+      <div id="todayDate" class="today-date"></div>
+    </div>
+  </header>
+
+  <main class="container-main page-content schedule-page relative">
+    <section class="schedule-hero">
+      <p class="schedule-hero-kicker">Metroville Pro Hoops</p>
+      <h2>2026 Game Schedule</h2>
+      <p class="schedule-hero-subtitle">Full slate ng matchups, tipoff time, at venue updates sa isang modern game center view.</p>
+      <div class="schedule-hero-meta">
+        <span id="scheduleHeroDate" class="hero-pill">Today • --</span>
+        <span id="scheduleHeroGames" class="hero-pill hero-pill-strong">Games • 0</span>
+      </div>
+    </section>
+
+    <section class="content-card schedule-shell">
+      <div class="section-head schedule-head">
+        <h3 class="section-title">Upcoming Matchups</h3>
+        <p class="section-subtitle">Narito ang schedule ng upcoming league games.</p>
+      </div>
+      <div id="scheduleContainer" class="schedule-grid"></div>
+    </section>
+  </main>
+
+  <footer class="footer">© 2026 Metroville Basketball League • Pro Dashboard</footer>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Metroville Basketball League 2026</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body data-page="home" class="min-h-screen antialiased">
+  <header class="league-nav">
+    <div class="container-main nav-inner">
+      <div class="brand-wrap">
+        <div class="logo-box">
+          <img src="https://upload.wikimedia.org/wikipedia/commons/7/7a/Basketball.png" alt="Metroville Basketball League logo" onerror="this.onerror=null;this.src='assets/logos/logo.png';" />
+          <span class="logo-overlay">MBL</span>
+        </div>
+        <div class="brand-copy">
+          <h1>Metroville Basketball League 2026</h1>
+          <p>Official League Portal</p>
+        </div>
+      </div>
+      <nav class="nav-links">
+        <a href="index.html" data-link="home">Home</a>
+        <a href="game-schedule.html" data-link="schedule">Game Schedule</a>
+        <a href="team-standing.html" data-link="standing">Team Standing</a>
+        <a href="best-player.html" data-link="players">Best Player</a>
+      </nav>
+      <div id="todayDate" class="today-date"></div>
+    </div>
+  </header>
+
+  <main class="container-main page-content relative">
+    <section class="hero-card hero-with-slider">
+      <div class="hero-slider-bg">
+        <div class="events-slider hero-events-slider" id="eventSlider">
+          <button class="slide-control prev" id="prevEvent" aria-label="Previous event">‹</button>
+          <div class="event-viewport">
+            <div id="eventSlidesTrack" class="event-slides-track"></div>
+          </div>
+          <button class="slide-control next" id="nextEvent" aria-label="Next event">›</button>
+        </div>
+      </div>
+      <div class="hero-overlay"></div>
+
+      <div class="hero-copy">
+        <h2>Welcome, Players!</h2>
+        <p>
+          Dito mo makikita ang mga upcoming games, latest team standings, at best players of the game.
+          Gamitin ang sections sa ibaba para mabilis mong ma-check ang updates ng league.
+        </p>
+      </div>
+
+      <div id="eventDots" class="event-dots hero-dots" aria-label="Event slider navigation"></div>
+    </section>
+
+  
+
+    <section class="quick-grid mt-8">
+      <a class="quick-card" href="game-schedule.html">
+        <div class="quick-card-media">
+          <img src="https://images.unsplash.com/photo-1519861531473-9200262188bf?auto=format&fit=crop&w=1000&q=80" alt="Basketball game schedule" loading="lazy" />
+          <span class="quick-icon-badge" aria-hidden="true">📅</span>
+        </div>
+        <div class="quick-card-body">
+          <h3>Game Schedule</h3>
+          <p>View upcoming matchups, dates, game times, and venue details.</p>
+          <span class="quick-link-hint">Open Schedule →</span>
+        </div>
+      </a>
+      <a class="quick-card" href="team-standing.html">
+        <div class="quick-card-media">
+          <img src="https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=1000&q=80" alt="Team standings board" loading="lazy" />
+          <span class="quick-icon-badge" aria-hidden="true">🏆</span>
+        </div>
+        <div class="quick-card-body">
+          <h3>Team Standings</h3>
+          <p>Track updated rankings, wins, losses, and win percentages.</p>
+          <span class="quick-link-hint">View Standings →</span>
+        </div>
+      </a>
+      <a class="quick-card" href="best-player.html">
+        <div class="quick-card-media">
+          <img src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1000&q=80" alt="Best player spotlight" loading="lazy" />
+          <span class="quick-icon-badge" aria-hidden="true">⭐</span>
+        </div>
+        <div class="quick-card-body">
+          <h3>Best Player Spotlight</h3>
+          <p>See top player performances and game-by-game highlights.</p>
+          <span class="quick-link-hint">See Top Players →</span>
+        </div>
+      </a>
+    </section>
+
+    <section class="content-card team-logos-section mt-8">
+      <div class="section-head">
+        <h3 class="section-title">Team Logos</h3>
+        <p class="section-subtitle">Official logos ng bawat team sa Metroville Basketball League.</p>
+      </div>
+      <div id="teamLogosGrid" class="team-logos-grid"></div>
+    </section>
+  </main>
+
+  <footer class="footer">© 2026 Metroville Basketball League • Pro Dashboard</footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
