@@ -60,6 +60,11 @@ body {
   color: #bdd0ee;
 }
 
+.field-hint {
+  color: #8fb0df;
+  font-size: 0.78rem;
+}
+
 input,
 button,
 select {
@@ -169,23 +174,6 @@ button:hover {
 .form-actions button[type="button"] {
   background: #304c75;
   color: #e8f0ff;
-}
-
-.logo-preview-wrap {
-  display: grid;
-  gap: 6px;
-  align-content: end;
-  color: #bdd0ee;
-  font-size: 0.92rem;
-}
-
-.logo-preview-wrap img {
-  width: 78px;
-  height: 78px;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background: #0f1b30;
-  object-fit: cover;
 }
 
 .table-wrap {
