@@ -314,8 +314,39 @@ function renderSchedule(){
 
   if (heroGames) heroGames.textContent = `Games • ${schedule.length}`;
 
-  container.className = "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8";
-  container.innerHTML = schedule.map((g, gameIndex) => {
+  const sortGames = [...schedule].sort((firstGame, secondGame) => {
+    const firstDate = String(firstGame && firstGame.date ? firstGame.date : "9999-12-31");
+    const secondDate = String(secondGame && secondGame.date ? secondGame.date : "9999-12-31");
+    if (firstDate !== secondDate) return firstDate.localeCompare(secondDate);
+
+    const firstTime = String(firstGame && firstGame.time ? firstGame.time : "99:99");
+    const secondTime = String(secondGame && secondGame.time ? secondGame.time : "99:99");
+    return firstTime.localeCompare(secondTime);
+  });
+
+  const groupedByDate = sortGames.reduce((groupMap, game) => {
+    const dateKey = String(game && game.date ? game.date : "TBD Date");
+    if (!groupMap[dateKey]) groupMap[dateKey] = [];
+    groupMap[dateKey].push(game);
+    return groupMap;
+  }, {});
+
+  const dateKeys = Object.keys(groupedByDate).sort((firstDate, secondDate) => {
+    if (firstDate === "TBD Date") return 1;
+    if (secondDate === "TBD Date") return -1;
+    return firstDate.localeCompare(secondDate);
+  });
+
+  container.className = "space-y-8";
+  container.innerHTML = dateKeys.map((dateKey) => {
+    const gamesForDay = groupedByDate[dateKey] || [];
+    const dayDate = dateKey !== "TBD Date" ? new Date(dateKey) : null;
+    const dayLabel = dayDate && !Number.isNaN(dayDate.getTime())
+      ? dayDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "2-digit", year: "numeric" })
+      : "TBD Date";
+
+    const cardsHtml = gamesForDay.map((g, gameIndex) => {
+      const overallIndex = sortGames.findIndex((row) => row === g) + 1;
     const awayTeam = safeText(g.away || "Away Team");
     const homeTeam = safeText(g.home || "Home Team");
     const awayRecord = safeText(getTeamRecord(g.away));
@@ -341,7 +372,7 @@ function renderSchedule(){
           data-venue="${encodeURIComponent(String(g.venue || ""))}"
           data-away="${encodeURIComponent(String(g.away || ""))}"
           data-home="${encodeURIComponent(String(g.home || ""))}"
-          data-game-number="${encodeURIComponent(String(gameIndex + 1))}"
+          data-game-number="${encodeURIComponent(String(overallIndex))}"
           data-away-record="${encodeURIComponent(String(getTeamRecord(g.away) || ""))}"
           data-home-record="${encodeURIComponent(String(getTeamRecord(g.home) || ""))}"
           data-away-logo="${encodeURIComponent(String(getTeamLogo(g.away) || ""))}"
@@ -350,7 +381,7 @@ function renderSchedule(){
 
         <div class="relative z-10">
           <div class="mb-5 rounded-2xl border border-slate-600/40 bg-slate-800/45 px-4 py-3 text-center">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-300">Game ${gameIndex + 1} | ${safeText(scheduleDateDisplay)} | ${scheduleTimeDisplay}</p>
+            <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-300">Game ${overallIndex} | ${safeText(scheduleDateDisplay)} | ${scheduleTimeDisplay}</p>
           </div>
 
           <div class="rounded-2xl border border-slate-700/60 bg-slate-900/55 p-4">
@@ -388,6 +419,14 @@ function renderSchedule(){
           </div>
         </div>
       </article>
+    `;
+    }).join("");
+
+    return `
+      <section class="space-y-4">
+        <h4 class="text-sm font-bold uppercase tracking-[0.16em] text-blue-200">${safeText(dayLabel)} • ${gamesForDay.length} game(s)</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8">${cardsHtml}</div>
+      </section>
     `;
   }).join("");
 
