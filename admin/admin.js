@@ -46,6 +46,9 @@ const el = {
   scheduleForm: document.getElementById("scheduleForm"),
   playerForm: document.getElementById("playerForm"),
   teamLogoFile: document.getElementById("teamLogoFile"),
+  teamModal: document.getElementById("teamModal"),
+  scheduleModal: document.getElementById("scheduleModal"),
+  playerModal: document.getElementById("playerModal"),
 };
 
 const byId = (id) => document.getElementById(id);
@@ -54,6 +57,77 @@ const setMessage = (target, text, isError = false) => {
   target.textContent = text || "";
   target.style.color = isError ? "#ff9cb3" : "#ffd166";
 };
+
+const hasSwal = () => typeof window.Swal !== "undefined";
+
+async function notifySuccess(title, text) {
+  if (hasSwal()) {
+    await window.Swal.fire({
+      icon: "success",
+      title,
+      text,
+      confirmButtonColor: "#2ec4b6",
+    });
+    return;
+  }
+  setMessage(el.globalMessage, text);
+}
+
+async function notifyError(title, text) {
+  if (hasSwal()) {
+    await window.Swal.fire({
+      icon: "error",
+      title,
+      text,
+      confirmButtonColor: "#ef476f",
+    });
+    return;
+  }
+  setMessage(el.globalMessage, text, true);
+}
+
+async function confirmAction(title, text) {
+  if (!hasSwal()) {
+    return window.confirm(text || title);
+  }
+
+  const result = await window.Swal.fire({
+    icon: "warning",
+    title,
+    text,
+    showCancelButton: true,
+    confirmButtonText: "Yes",
+    cancelButtonText: "Cancel",
+    confirmButtonColor: "#ef476f",
+  });
+
+  return Boolean(result.isConfirmed);
+}
+
+function getModalByType(type) {
+  if (type === "team") return el.teamModal;
+  if (type === "schedule") return el.scheduleModal;
+  if (type === "player") return el.playerModal;
+  return null;
+}
+
+function openModal(type) {
+  const modal = getModalByType(type);
+  if (!modal) return;
+  modal.classList.remove("hidden");
+}
+
+function closeModal(type) {
+  const modal = getModalByType(type);
+  if (!modal) return;
+  modal.classList.add("hidden");
+}
+
+function closeAllModals() {
+  el.teamModal.classList.add("hidden");
+  el.scheduleModal.classList.add("hidden");
+  el.playerModal.classList.add("hidden");
+}
 
 const normalizeApiBase = (rawValue) => String(rawValue || "").trim().replace(/\/+$/, "");
 
@@ -375,6 +449,7 @@ async function submitTeamForm(event) {
   event.preventDefault();
   try {
     const teamId = byId("teamId").value;
+    const isEdit = Boolean(teamId);
     const payload = {
       name: byId("teamName").value.trim(),
       logo: byId("teamLogo").value.trim(),
@@ -390,10 +465,11 @@ async function submitTeamForm(event) {
     }
 
     resetTeamForm();
+    closeModal("team");
     await loadAllData();
-    setMessage(el.globalMessage, "Team saved successfully.");
+    await notifySuccess("Team Saved", isEdit ? "Team updated successfully." : "Team created successfully.");
   } catch (error) {
-    setMessage(el.globalMessage, error.message, true);
+    await notifyError("Save Failed", error.message);
   }
 }
 
@@ -401,6 +477,7 @@ async function submitScheduleForm(event) {
   event.preventDefault();
   try {
     const scheduleId = byId("scheduleId").value;
+    const isEdit = Boolean(scheduleId);
     const payload = {
       team1: byId("scheduleTeam1").value.trim(),
       team2: byId("scheduleTeam2").value.trim(),
@@ -417,10 +494,11 @@ async function submitScheduleForm(event) {
     }
 
     resetScheduleForm();
+    closeModal("schedule");
     await loadAllData();
-    setMessage(el.globalMessage, "Schedule saved successfully.");
+    await notifySuccess("Game Saved", isEdit ? "Schedule updated successfully." : "Schedule created successfully.");
   } catch (error) {
-    setMessage(el.globalMessage, error.message, true);
+    await notifyError("Save Failed", error.message);
   }
 }
 
@@ -428,6 +506,7 @@ async function submitPlayerForm(event) {
   event.preventDefault();
   try {
     const playerId = byId("playerId").value;
+    const isEdit = Boolean(playerId);
     const payload = {
       playerName: byId("playerName").value.trim(),
       team: byId("playerTeam").value.trim(),
@@ -445,15 +524,16 @@ async function submitPlayerForm(event) {
     }
 
     resetPlayerForm();
+    closeModal("player");
     await loadAllData();
-    setMessage(el.globalMessage, "Player saved successfully.");
+    await notifySuccess("Player Saved", isEdit ? "Best player updated successfully." : "Best player created successfully.");
   } catch (error) {
-    setMessage(el.globalMessage, error.message, true);
+    await notifyError("Save Failed", error.message);
   }
 }
 
 async function handleDelete(type, itemId) {
-  const ok = window.confirm("Delete this record?");
+  const ok = await confirmAction("Delete record?", "This action cannot be undone.");
   if (!ok) return;
 
   try {
@@ -465,9 +545,9 @@ async function handleDelete(type, itemId) {
 
     await apiFetch(pathByType[type], { method: "DELETE" });
     await loadAllData();
-    setMessage(el.globalMessage, "Record deleted.");
+    await notifySuccess("Deleted", "Record deleted successfully.");
   } catch (error) {
-    setMessage(el.globalMessage, error.message, true);
+    await notifyError("Delete Failed", error.message);
   }
 }
 
@@ -486,6 +566,7 @@ function handleRowAction(event) {
     if (item) {
       switchView("standing");
       populateTeamForm(item);
+      openModal("team");
     }
     return;
   }
@@ -495,6 +576,7 @@ function handleRowAction(event) {
     if (item) {
       switchView("schedule");
       populateScheduleForm(item);
+      openModal("schedule");
     }
     return;
   }
@@ -504,6 +586,7 @@ function handleRowAction(event) {
     if (item) {
       switchView("players");
       populatePlayerForm(item);
+      openModal("player");
     }
     return;
   }
@@ -624,6 +707,34 @@ function attachEvents() {
   document.body.addEventListener("click", (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
+
+    const modalOpenType = target.getAttribute("data-modal-open");
+    if (modalOpenType === "team") {
+      resetTeamForm();
+      openModal("team");
+      return;
+    }
+    if (modalOpenType === "schedule") {
+      resetScheduleForm();
+      openModal("schedule");
+      return;
+    }
+    if (modalOpenType === "player") {
+      resetPlayerForm();
+      openModal("player");
+      return;
+    }
+
+    const modalCloseType = target.getAttribute("data-modal-close");
+    if (modalCloseType) {
+      closeModal(modalCloseType);
+      return;
+    }
+
+    if (target.classList.contains("modal")) {
+      closeAllModals();
+      return;
+    }
 
     const resetType = target.getAttribute("data-reset");
     if (resetType === "team") resetTeamForm();
