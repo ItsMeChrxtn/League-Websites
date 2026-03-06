@@ -112,21 +112,32 @@ function getModalByType(type) {
 }
 
 function openModal(type) {
+  closeAllModals();
   const modal = getModalByType(type);
   if (!modal) return;
   modal.classList.remove("hidden");
+  document.body.classList.add("modal-open");
 }
 
 function closeModal(type) {
   const modal = getModalByType(type);
   if (!modal) return;
   modal.classList.add("hidden");
+
+  const hasVisibleModal = !el.teamModal.classList.contains("hidden") ||
+    !el.scheduleModal.classList.contains("hidden") ||
+    !el.playerModal.classList.contains("hidden");
+
+  if (!hasVisibleModal) {
+    document.body.classList.remove("modal-open");
+  }
 }
 
 function closeAllModals() {
   el.teamModal.classList.add("hidden");
   el.scheduleModal.classList.add("hidden");
   el.playerModal.classList.add("hidden");
+  document.body.classList.remove("modal-open");
 }
 
 const normalizeApiBase = (rawValue) => String(rawValue || "").trim().replace(/\/+$/, "");
@@ -702,6 +713,12 @@ function attachEvents() {
     const view = target.getAttribute("data-view");
     if (!view) return;
     switchView(view);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeAllModals();
+    }
   });
 
   document.body.addEventListener("click", (event) => {

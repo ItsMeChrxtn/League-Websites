@@ -22,6 +22,10 @@ body {
   color: var(--ink);
 }
 
+body.modal-open {
+  overflow: hidden;
+}
+
 .hidden {
   display: none !important;
 }
@@ -247,14 +251,30 @@ tr:hover td {
 }
 
 .modal-card {
-  width: min(920px, 100%);
-  max-height: min(86vh, 860px);
+  width: min(820px, 100%);
+  max-height: min(88vh, 860px);
   overflow: auto;
   border: 1px solid #2e456a;
   border-radius: 18px;
   padding: 18px;
   background: linear-gradient(180deg, #11203a 0%, #0d182b 100%);
   box-shadow: 0 28px 56px rgba(0, 0, 0, 0.46);
+}
+
+.modal .inline-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.modal .stacked-form label {
+  min-width: 0;
+}
+
+.modal .form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .modal-head {
@@ -290,5 +310,9 @@ tr:hover td {
 
   .side-nav {
     grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .modal .inline-grid {
+    grid-template-columns: 1fr;
   }
 }
