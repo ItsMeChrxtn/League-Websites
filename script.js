@@ -169,9 +169,10 @@ async function loadLeagueData(){
 
     dataLoadError = "";
   } catch (error) {
-    console.error("Falling back to static league data:", error);
-    loadStaticLeagueData();
-    dataLoadError = "";
+    console.error("Live API fetch failed:", error);
+    if (!standings.length && !schedule.length && !bestPlayers.length) {
+      dataLoadError = "Live data is temporarily unavailable. Please wait a moment...";
+    }
   }
 }
 
