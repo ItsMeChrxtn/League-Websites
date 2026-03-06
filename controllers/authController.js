@@ -33,6 +33,17 @@ const loginAdmin = async (req, res) => {
   });
 };
 
+const verifyAdmin = async (req, res) => {
+  return res.json({
+    ok: true,
+    admin: {
+      username: req.admin.username,
+      role: req.admin.role,
+    },
+  });
+};
+
 module.exports = {
   loginAdmin,
+  verifyAdmin,
 };

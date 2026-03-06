@@ -81,6 +81,11 @@ async function apiFetch(path, options = {}) {
 
   if (!response.ok) {
     const message = payload && payload.message ? payload.message : `Request failed (${response.status})`;
+
+    if (response.status === 401 || response.status === 403) {
+      logout("Session expired. Please login again.");
+    }
+
     throw new Error(message);
   }
 
@@ -517,18 +522,26 @@ async function onLoginSubmit(event) {
   }
 }
 
-function logout() {
+function logout(messageText = "Logged out.") {
   localStorage.removeItem("LEAGUE_ADMIN_TOKEN");
   localStorage.removeItem("LEAGUE_ADMIN_NAME");
   state.token = "";
   state.adminName = "";
   el.dashboard.classList.add("hidden");
   el.authShell.classList.remove("hidden");
-  setMessage(el.authMessage, "Logged out.");
+  setMessage(el.authMessage, messageText, messageText.toLowerCase().includes("expired"));
 }
 
 async function bootDashboard() {
   try {
+    if (state.token) {
+      const verifyPayload = await apiFetch("/auth/verify");
+      if (verifyPayload && verifyPayload.admin && verifyPayload.admin.username) {
+        state.adminName = verifyPayload.admin.username;
+        localStorage.setItem("LEAGUE_ADMIN_NAME", state.adminName);
+      }
+    }
+
     el.authShell.classList.add("hidden");
     el.dashboard.classList.remove("hidden");
     el.adminMeta.textContent = `Signed in as ${state.adminName}`;
@@ -539,6 +552,11 @@ async function bootDashboard() {
     switchView(state.currentView);
     setMessage(el.globalMessage, "Data loaded.");
   } catch (error) {
+    if (!state.token) {
+      setMessage(el.authMessage, "Please login to continue.", true);
+      return;
+    }
+
     setMessage(el.globalMessage, error.message, true);
   }
 }
