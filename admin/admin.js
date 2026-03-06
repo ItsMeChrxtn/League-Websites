@@ -213,6 +213,36 @@ function readImageFileAsDataUrl(fileObject) {
   });
 }
 
+function compressImageDataUrl(sourceDataUrl, mimeType = "image/webp", quality = 0.82, maxSize = 512) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      const width = image.width;
+      const height = image.height;
+
+      const ratio = Math.min(1, maxSize / Math.max(width, height));
+      const targetWidth = Math.max(1, Math.round(width * ratio));
+      const targetHeight = Math.max(1, Math.round(height * ratio));
+
+      const canvas = document.createElement("canvas");
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+
+      const context = canvas.getContext("2d");
+      if (!context) {
+        reject(new Error("Unable to prepare image upload."));
+        return;
+      }
+
+      context.drawImage(image, 0, 0, targetWidth, targetHeight);
+      resolve(canvas.toDataURL(mimeType, quality));
+    };
+
+    image.onerror = () => reject(new Error("Unable to process selected image."));
+    image.src = sourceDataUrl;
+  });
+}
+
 async function onTeamLogoFileChange(event) {
   const target = event.target;
   if (!(target instanceof HTMLInputElement)) return;
@@ -234,9 +264,10 @@ async function onTeamLogoFileChange(event) {
   }
 
   try {
-    const dataUrl = await readImageFileAsDataUrl(selectedFile);
-    byId("teamLogo").value = dataUrl;
-    setMessage(el.globalMessage, `Logo file selected: ${selectedFile.name}`);
+    const rawDataUrl = await readImageFileAsDataUrl(selectedFile);
+    const compressedDataUrl = await compressImageDataUrl(rawDataUrl);
+    byId("teamLogo").value = compressedDataUrl;
+    setMessage(el.globalMessage, `Logo file selected: ${selectedFile.name} (optimized for upload)`);
   } catch (error) {
     setMessage(el.globalMessage, error.message, true);
   }
@@ -523,22 +554,29 @@ async function onLoginSubmit(event) {
 }
 
 function logout(messageText = "Logged out.") {
+  const safeMessage = typeof messageText === "string" ? messageText : "Logged out.";
   localStorage.removeItem("LEAGUE_ADMIN_TOKEN");
   localStorage.removeItem("LEAGUE_ADMIN_NAME");
   state.token = "";
   state.adminName = "";
   el.dashboard.classList.add("hidden");
   el.authShell.classList.remove("hidden");
-  setMessage(el.authMessage, messageText, messageText.toLowerCase().includes("expired"));
+  setMessage(el.authMessage, safeMessage, safeMessage.toLowerCase().includes("expired"));
 }
 
 async function bootDashboard() {
   try {
     if (state.token) {
-      const verifyPayload = await apiFetch("/auth/verify");
-      if (verifyPayload && verifyPayload.admin && verifyPayload.admin.username) {
-        state.adminName = verifyPayload.admin.username;
-        localStorage.setItem("LEAGUE_ADMIN_NAME", state.adminName);
+      try {
+        const verifyPayload = await apiFetch("/auth/verify");
+        if (verifyPayload && verifyPayload.admin && verifyPayload.admin.username) {
+          state.adminName = verifyPayload.admin.username;
+          localStorage.setItem("LEAGUE_ADMIN_NAME", state.adminName);
+        }
+      } catch (verifyError) {
+        if (!String(verifyError.message || "").includes("404")) {
+          throw verifyError;
+        }
       }
     }
 
@@ -565,7 +603,7 @@ function attachEvents() {
   el.apiBaseInput.value = state.apiBase;
 
   el.loginForm.addEventListener("submit", onLoginSubmit);
-  el.logoutBtn.addEventListener("click", logout);
+  el.logoutBtn.addEventListener("click", () => logout());
   el.refreshBtn.addEventListener("click", async () => {
     try {
       await loadAllData();
