@@ -32,6 +32,10 @@ const configuredApiBase = String(window.LEAGUE_API_BASE_URL || localStorage.getI
   .trim()
   .replace(/\/+$/, "");
 const API_BASE_URL = configuredApiBase;
+const LIVE_REFRESH_INTERVAL_MS = 15000;
+let liveRefreshIntervalId;
+let isRefreshingLeagueData = false;
+let lastDataSignature = "";
 
 const staticLeagueData = {
   schedule: [
@@ -169,6 +173,72 @@ async function loadLeagueData(){
     loadStaticLeagueData();
     dataLoadError = "";
   }
+}
+
+function buildLeagueDataSignature() {
+  const standingsSignature = standings
+    .map((team) => `${team.team}|${team.wins}|${team.losses}|${team.points}`)
+    .sort()
+    .join("~");
+
+  const scheduleSignature = schedule
+    .map((game) => `${game.away}|${game.home}|${game.date}|${game.time}|${game.venue}|${game.status}`)
+    .sort()
+    .join("~");
+
+  const playersSignature = bestPlayers
+    .map((player) => `${player.player}|${player.team}|${player.points}|${player.rebounds}|${player.assists}|${player.game_date}`)
+    .sort()
+    .join("~");
+
+  const logosSignature = Object.keys(teamLogos)
+    .sort()
+    .map((teamName) => `${teamName}|${String(teamLogos[teamName] || "").slice(0, 64)}`)
+    .join("~");
+
+  return `${standingsSignature}::${scheduleSignature}::${playersSignature}::${logosSignature}`;
+}
+
+function renderLeagueSections() {
+  renderDate();
+  renderHighlights();
+  renderTeamLogos();
+  renderSchedule();
+  renderStandings();
+  renderPlayers();
+}
+
+async function refreshLeagueDataAndRender({ forceRender = false } = {}) {
+  if (isRefreshingLeagueData) return;
+
+  isRefreshingLeagueData = true;
+  try {
+    await loadLeagueData();
+
+    const nextSignature = buildLeagueDataSignature();
+    if (forceRender || nextSignature !== lastDataSignature) {
+      renderLeagueSections();
+      lastDataSignature = nextSignature;
+    }
+  } finally {
+    isRefreshingLeagueData = false;
+  }
+}
+
+function startLiveRefresh() {
+  if (!API_BASE_URL) return;
+  if (liveRefreshIntervalId) clearInterval(liveRefreshIntervalId);
+
+  liveRefreshIntervalId = window.setInterval(() => {
+    if (document.hidden) return;
+    refreshLeagueDataAndRender();
+  }, LIVE_REFRESH_INTERVAL_MS);
+
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) {
+      refreshLeagueDataAndRender();
+    }
+  });
 }
 
 function formatScheduleDate(dateValue){
@@ -1407,13 +1477,9 @@ function setActiveNav(){
 }
 
 document.addEventListener("DOMContentLoaded", async ()=>{
-  await loadLeagueData();
-  renderDate();
-  renderHighlights();
   renderEventSlider();
-  renderTeamLogos();
-  renderSchedule();
-  renderStandings();
-  renderPlayers();
   setActiveNav();
+
+  await refreshLeagueDataAndRender({ forceRender: true });
+  startLiveRefresh();
 });
