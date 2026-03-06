@@ -1,5 +1,19 @@
+const getDefaultApiBase = () => {
+  const configuredValue = String(window.LEAGUE_API_BASE_URL || "").trim().replace(/\/+$/, "");
+  if (configuredValue) return configuredValue;
+
+  const storedValue = String(localStorage.getItem("LEAGUE_API_BASE_URL") || "").trim().replace(/\/+$/, "");
+  if (storedValue) return storedValue;
+
+  const isLocalHost =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1";
+
+  return isLocalHost ? "http://localhost:5000/api" : "";
+};
+
 const state = {
-  apiBase: localStorage.getItem("LEAGUE_API_BASE_URL") || "http://localhost:5000/api",
+  apiBase: getDefaultApiBase(),
   token: localStorage.getItem("LEAGUE_ADMIN_TOKEN") || "",
   adminName: localStorage.getItem("LEAGUE_ADMIN_NAME") || "",
   currentView: "standing",
@@ -484,6 +498,14 @@ function attachEvents() {
 }
 
 attachEvents();
+
+if (!state.apiBase) {
+  setMessage(
+    el.authMessage,
+    "Set your Render API URL first (example: https://your-service.onrender.com/api).",
+    true
+  );
+}
 
 if (state.token) {
   bootDashboard();
