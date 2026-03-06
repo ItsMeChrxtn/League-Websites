@@ -45,6 +45,8 @@ const el = {
   teamForm: document.getElementById("teamForm"),
   scheduleForm: document.getElementById("scheduleForm"),
   playerForm: document.getElementById("playerForm"),
+  teamLogoFile: document.getElementById("teamLogoFile"),
+  teamLogoPreview: document.getElementById("teamLogoPreview"),
 };
 
 const byId = (id) => document.getElementById(id);
@@ -55,6 +57,51 @@ const setMessage = (target, text, isError = false) => {
 };
 
 const normalizeApiBase = (rawValue) => String(rawValue || "").trim().replace(/\/+$/, "");
+
+const escapeHtml = (value) => String(value || "")
+  .replace(/&/g, "&amp;")
+  .replace(/</g, "&lt;")
+  .replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;")
+  .replace(/'/g, "&#39;");
+
+function getTeamNames() {
+  return [...new Set(
+    state.teams
+      .map((team) => String(team && team.name ? team.name : "").trim())
+      .filter(Boolean)
+  )].sort((first, second) => first.localeCompare(second));
+}
+
+function setSelectOptions(selectElement, placeholder, selectedValue = "") {
+  if (!selectElement) return;
+
+  const selected = String(selectedValue || "").trim();
+  const names = getTeamNames();
+
+  if (selected && !names.includes(selected)) {
+    names.unshift(selected);
+  }
+
+  selectElement.innerHTML = [
+    `<option value="">${escapeHtml(placeholder)}</option>`,
+    ...names.map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`),
+  ].join("");
+
+  selectElement.value = selected;
+}
+
+function refreshTeamSelectOptions(preselect = {}) {
+  setSelectOptions(byId("scheduleTeam1"), "Select Team 1", preselect.team1 || byId("scheduleTeam1").value);
+  setSelectOptions(byId("scheduleTeam2"), "Select Team 2", preselect.team2 || byId("scheduleTeam2").value);
+  setSelectOptions(byId("playerTeam"), "Select Team", preselect.playerTeam || byId("playerTeam").value);
+}
+
+function updateTeamLogoPreview(srcValue) {
+  if (!el.teamLogoPreview) return;
+  const src = String(srcValue || "").trim();
+  el.teamLogoPreview.src = src || "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==";
+}
 
 async function apiFetch(path, options = {}) {
   const headers = {
@@ -166,6 +213,8 @@ async function loadAllData() {
   state.schedule = Array.isArray(schedule) ? schedule : [];
   state.players = Array.isArray(players) ? players : [];
 
+  refreshTeamSelectOptions();
+
   renderTeams();
   renderSchedule();
   renderPlayers();
@@ -178,6 +227,8 @@ function resetTeamForm() {
   byId("teamWins").value = 0;
   byId("teamLosses").value = 0;
   byId("teamPoints").value = 0;
+  if (el.teamLogoFile) el.teamLogoFile.value = "";
+  updateTeamLogoPreview("");
 }
 
 function resetScheduleForm() {
@@ -188,6 +239,7 @@ function resetScheduleForm() {
   byId("scheduleTime").value = "";
   byId("scheduleVenue").value = "";
   byId("scheduleStatus").value = "Upcoming";
+  refreshTeamSelectOptions({ team1: "", team2: "" });
 }
 
 function resetPlayerForm() {
@@ -199,6 +251,7 @@ function resetPlayerForm() {
   byId("playerAssists").value = 0;
   byId("playerGameDate").value = "";
   byId("playerImage").value = "";
+  refreshTeamSelectOptions({ playerTeam: "" });
 }
 
 function switchView(viewName) {
@@ -227,9 +280,11 @@ function populateTeamForm(item) {
   byId("teamWins").value = Number(item.wins) || 0;
   byId("teamLosses").value = Number(item.losses) || 0;
   byId("teamPoints").value = Number(item.points) || 0;
+  updateTeamLogoPreview(item.logo || "");
 }
 
 function populateScheduleForm(item) {
+  refreshTeamSelectOptions({ team1: item.team1 || "", team2: item.team2 || "" });
   byId("scheduleId").value = item._id || "";
   byId("scheduleTeam1").value = item.team1 || "";
   byId("scheduleTeam2").value = item.team2 || "";
@@ -240,6 +295,7 @@ function populateScheduleForm(item) {
 }
 
 function populatePlayerForm(item) {
+  refreshTeamSelectOptions({ playerTeam: item.team || "" });
   byId("playerId").value = item._id || "";
   byId("playerName").value = item.playerName || "";
   byId("playerTeam").value = item.team || "";
@@ -495,6 +551,37 @@ function attachEvents() {
   el.teamForm.addEventListener("submit", submitTeamForm);
   el.scheduleForm.addEventListener("submit", submitScheduleForm);
   el.playerForm.addEventListener("submit", submitPlayerForm);
+
+  byId("teamLogo").addEventListener("input", () => {
+    updateTeamLogoPreview(byId("teamLogo").value);
+  });
+
+  if (el.teamLogoFile) {
+    el.teamLogoFile.addEventListener("change", () => {
+      const file = el.teamLogoFile.files && el.teamLogoFile.files[0];
+      if (!file) return;
+
+      const maxSizeBytes = 2 * 1024 * 1024;
+      if (file.size > maxSizeBytes) {
+        el.teamLogoFile.value = "";
+        setMessage(el.globalMessage, "Logo file is too large. Max size is 2MB.", true);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = String(reader.result || "");
+        byId("teamLogo").value = dataUrl;
+        updateTeamLogoPreview(dataUrl);
+        setMessage(el.globalMessage, "Logo uploaded. Save Team to apply changes.");
+      };
+      reader.onerror = () => {
+        setMessage(el.globalMessage, "Failed to read selected logo file.", true);
+      };
+
+      reader.readAsDataURL(file);
+    });
+  }
 }
 
 attachEvents();
