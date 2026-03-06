@@ -1176,9 +1176,9 @@ async function downloadScheduleDayPoster(dayKey, gamesForDay, buttonElement) {
       ? dayDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "2-digit", year: "numeric" })
       : "TBD Date";
 
-    const rowHeight = 172;
-    const canvasWidth = 1080;
-    const canvasHeight = Math.max(980, 320 + (gamesForDay.length * rowHeight) + 130);
+    const rowHeight = 198;
+    const canvasWidth = 1200;
+    const canvasHeight = Math.max(1120, 390 + (gamesForDay.length * rowHeight) + 150);
     const canvas = document.createElement("canvas");
     canvas.width = canvasWidth;
     canvas.height = canvasHeight;
@@ -1190,83 +1190,173 @@ async function downloadScheduleDayPoster(dayKey, gamesForDay, buttonElement) {
 
     const backgroundGradient = context.createLinearGradient(0, 0, canvasWidth, canvasHeight);
     backgroundGradient.addColorStop(0, "#050b16");
-    backgroundGradient.addColorStop(0.5, "#0f172a");
-    backgroundGradient.addColorStop(1, "#111827");
+    backgroundGradient.addColorStop(0.42, "#101f3b");
+    backgroundGradient.addColorStop(1, "#0b1220");
     context.fillStyle = backgroundGradient;
     context.fillRect(0, 0, canvasWidth, canvasHeight);
 
-    context.fillStyle = "rgba(37, 99, 235, 0.22)";
+    context.fillStyle = "rgba(251, 146, 60, 0.26)";
     context.beginPath();
-    context.arc(980, 100, 200, 0, Math.PI * 2);
+    context.arc(1100, 70, 180, 0, Math.PI * 2);
     context.fill();
 
+    context.fillStyle = "rgba(37, 99, 235, 0.18)";
+    context.beginPath();
+    context.arc(120, 170, 140, 0, Math.PI * 2);
+    context.fill();
+
+    context.strokeStyle = "rgba(251, 191, 36, 0.18)";
+    context.lineWidth = 3;
+    context.beginPath();
+    context.arc(canvasWidth / 2, canvasHeight / 2, 300, 0, Math.PI * 2);
+    context.stroke();
+
+    context.beginPath();
+    context.moveTo(canvasWidth / 2, 250);
+    context.lineTo(canvasWidth / 2, canvasHeight - 120);
+    context.stroke();
+
+    context.fillStyle = "rgba(15, 23, 42, 0.84)";
+    context.beginPath();
+    drawRoundedRect(context, 52, 36, 1096, 166, 28);
+    context.fill();
+    context.strokeStyle = "rgba(148, 163, 184, 0.3)";
+    context.lineWidth = 1.5;
+    context.beginPath();
+    drawRoundedRect(context, 52, 36, 1096, 166, 28);
+    context.stroke();
+
     context.fillStyle = "#f8fafc";
-    context.font = "900 44px Inter, Arial";
-    context.fillText("METROVILLE GAME SCHEDULE", 60, 86);
+    context.font = "900 48px Inter, Arial";
+    context.fillText("METROVILLE LEAGUE", 84, 101);
+    context.fillStyle = "#fcd34d";
+    context.font = "800 40px Inter, Arial";
+    context.fillText("GAME DAY POSTER", 84, 150);
     context.fillStyle = "#bfdbfe";
-    context.font = "700 28px Inter, Arial";
-    context.fillText(dayLabel, 60, 124);
+    context.font = "700 26px Inter, Arial";
+    context.fillText(dayLabel, 740, 116);
+    context.fillStyle = "#cbd5e1";
+    context.font = "700 18px Inter, Arial";
+    context.fillText(`${gamesForDay.length} matchups`, 740, 146);
 
     context.fillStyle = "rgba(15, 23, 42, 0.72)";
     context.beginPath();
-    drawRoundedRect(context, 46, 150, 988, canvasHeight - 220, 26);
+    drawRoundedRect(context, 52, 228, 1096, canvasHeight - 316, 28);
     context.fill();
     context.strokeStyle = "rgba(148, 163, 184, 0.26)";
     context.lineWidth = 1.4;
     context.beginPath();
-    drawRoundedRect(context, 46, 150, 988, canvasHeight - 220, 26);
+    drawRoundedRect(context, 52, 228, 1096, canvasHeight - 316, 28);
     context.stroke();
 
     for (let index = 0; index < gamesForDay.length; index += 1) {
       const game = gamesForDay[index];
-      const top = 176 + (index * rowHeight);
+      const top = 256 + (index * rowHeight);
 
-      context.fillStyle = index % 2 === 0 ? "rgba(30, 41, 59, 0.68)" : "rgba(15, 23, 42, 0.68)";
+      context.fillStyle = index % 2 === 0 ? "rgba(30, 41, 59, 0.8)" : "rgba(15, 23, 42, 0.8)";
       context.beginPath();
-      drawRoundedRect(context, 72, top, 936, rowHeight - 16, 18);
+      drawRoundedRect(context, 82, top, 1036, rowHeight - 18, 22);
       context.fill();
+
+      context.strokeStyle = index % 2 === 0 ? "rgba(125, 211, 252, 0.25)" : "rgba(251, 191, 36, 0.24)";
+      context.lineWidth = 1.2;
+      context.beginPath();
+      drawRoundedRect(context, 82, top, 1036, rowHeight - 18, 22);
+      context.stroke();
 
       const awayTeam = String(game.away || "Away Team");
       const homeTeam = String(game.home || "Home Team");
       const matchTime = formatScheduleTime(game.time || "");
       const venue = String(game.venue || "Metroville Basketball Court");
+      const matchStatus = String(game.status || "Upcoming");
 
       const awayLogo = await loadImageForCanvas(getTeamLogo(awayTeam));
       const homeLogo = await loadImageForCanvas(getTeamLogo(homeTeam));
 
       const awayLogoX = 132;
-      const homeLogoX = 772;
-      const logoY = top + 28;
-      const logoSize = 78;
+      const homeLogoX = 912;
+      const logoY = top + 40;
+      const logoSize = 102;
+      const logoRadius = logoSize / 2;
 
       context.fillStyle = "#f8fafc";
       context.beginPath();
-      drawRoundedRect(context, awayLogoX, logoY, logoSize, logoSize, 999);
+      context.arc(awayLogoX + logoRadius, logoY + logoRadius, logoRadius + 5, 0, Math.PI * 2);
       context.fill();
       context.beginPath();
-      drawRoundedRect(context, homeLogoX, logoY, logoSize, logoSize, 999);
+      context.arc(homeLogoX + logoRadius, logoY + logoRadius, logoRadius + 5, 0, Math.PI * 2);
       context.fill();
 
-      if (awayLogo) drawImageCover(context, awayLogo, awayLogoX, logoY, logoSize, logoSize);
-      if (homeLogo) drawImageCover(context, homeLogo, homeLogoX, logoY, logoSize, logoSize);
+      if (awayLogo) {
+        context.save();
+        context.beginPath();
+        context.arc(awayLogoX + logoRadius, logoY + logoRadius, logoRadius, 0, Math.PI * 2);
+        context.closePath();
+        context.clip();
+        drawImageCover(context, awayLogo, awayLogoX, logoY, logoSize, logoSize);
+        context.restore();
+      }
+
+      if (homeLogo) {
+        context.save();
+        context.beginPath();
+        context.arc(homeLogoX + logoRadius, logoY + logoRadius, logoRadius, 0, Math.PI * 2);
+        context.closePath();
+        context.clip();
+        drawImageCover(context, homeLogo, homeLogoX, logoY, logoSize, logoSize);
+        context.restore();
+      }
+
+      context.strokeStyle = "rgba(226,232,240,0.55)";
+      context.lineWidth = 2;
+      context.beginPath();
+      context.arc(awayLogoX + logoRadius, logoY + logoRadius, logoRadius, 0, Math.PI * 2);
+      context.stroke();
+      context.beginPath();
+      context.arc(homeLogoX + logoRadius, logoY + logoRadius, logoRadius, 0, Math.PI * 2);
+      context.stroke();
 
       context.fillStyle = "#f8fafc";
-      context.font = "800 26px Inter, Arial";
-      context.fillText(awayTeam, 228, top + 64);
-      context.fillText(homeTeam, 868, top + 64);
+      context.font = "900 30px Inter, Arial";
+      context.fillText(awayTeam, 260, top + 84);
+      context.fillText(homeTeam, 1044, top + 84);
 
-      context.fillStyle = "#93c5fd";
-      context.font = "900 20px Inter, Arial";
-      context.fillText("VS", 510, top + 66);
+      context.fillStyle = "rgba(37, 99, 235, 0.32)";
+      context.beginPath();
+      drawRoundedRect(context, 560, top + 44, 88, 66, 16);
+      context.fill();
+      context.strokeStyle = "rgba(147, 197, 253, 0.52)";
+      context.lineWidth = 1.2;
+      context.beginPath();
+      drawRoundedRect(context, 560, top + 44, 88, 66, 16);
+      context.stroke();
+      context.fillStyle = "#dbeafe";
+      context.font = "900 34px Inter, Arial";
+      context.fillText("VS", 585, top + 90);
 
       context.fillStyle = "#cbd5e1";
-      context.font = "700 18px Inter, Arial";
-      context.fillText(`${matchTime} | ${venue}`, 228, top + 106);
+      context.font = "700 20px Inter, Arial";
+      context.fillText(`${matchTime} | ${venue}`, 260, top + 124);
+
+      context.fillStyle = "rgba(251, 191, 36, 0.25)";
+      context.beginPath();
+      drawRoundedRect(context, 916, top + 126, 180, 34, 999);
+      context.fill();
+      context.strokeStyle = "rgba(253, 224, 71, 0.5)";
+      context.beginPath();
+      drawRoundedRect(context, 916, top + 126, 180, 34, 999);
+      context.stroke();
+      context.fillStyle = "#fde68a";
+      context.font = "800 16px Inter, Arial";
+      context.fillText(matchStatus.toUpperCase(), 938, top + 149);
     }
 
     context.fillStyle = "rgba(148, 163, 184, 0.86)";
     context.font = "600 18px Inter, Arial";
-    context.fillText(`Generated ${new Date().toLocaleString("en-US")}`, 60, canvasHeight - 34);
+    context.fillText(`Generated ${new Date().toLocaleString("en-US")}`, 60, canvasHeight - 46);
+    context.fillStyle = "#93c5fd";
+    context.font = "700 18px Inter, Arial";
+    context.fillText("Metroville Basketball League 2026", 820, canvasHeight - 46);
 
     const fileDatePart = String(dayKey || "schedule-day")
       .toLowerCase()

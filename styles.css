@@ -434,6 +434,20 @@ body {
   height: 74px;
 }
 
+.team-logo-card .team-logo,
+.schedule-card .team-logo,
+.standings-team-logo {
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.team-logo-card .team-logo img,
+.schedule-card .team-logo img,
+.standings-team-logo {
+  border-radius: 999px;
+  object-fit: cover;
+}
+
 .team-logo-card p {
   margin: 8px 0 0;
   font-size: 0.82rem;
