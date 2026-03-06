@@ -424,14 +424,29 @@ function renderSchedule(){
 
     return `
       <section class="space-y-4">
-        <h4 class="text-sm font-bold uppercase tracking-[0.16em] text-blue-200">${safeText(dayLabel)} • ${gamesForDay.length} game(s)</h4>
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 xl:gap-8">${cardsHtml}</div>
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h4 class="text-sm font-bold uppercase tracking-[0.16em] text-blue-200">${safeText(dayLabel)} • ${gamesForDay.length} game(s)</h4>
+          <button
+            type="button"
+            class="download-day-btn inline-flex items-center rounded-xl border border-blue-300/45 bg-blue-500/15 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-blue-100 transition hover:border-blue-200 hover:bg-blue-500/30"
+            data-day-key="${encodeURIComponent(String(dateKey))}"
+          >Download Day Poster</button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 xl:gap-8">${cardsHtml}</div>
       </section>
     `;
   }).join("");
 
   container.querySelectorAll(".download-game-btn").forEach((buttonElement) => {
     buttonElement.addEventListener("click", () => downloadScheduleGameCard(buttonElement));
+  });
+
+  container.querySelectorAll(".download-day-btn").forEach((buttonElement) => {
+    buttonElement.addEventListener("click", () => {
+      const dayKey = decodeURIComponent(String(buttonElement.dataset.dayKey || ""));
+      const gamesForDay = groupedByDate[dayKey] || [];
+      downloadScheduleDayPoster(dayKey, gamesForDay, buttonElement);
+    });
   });
 }
 
@@ -1143,6 +1158,133 @@ async function downloadScheduleGameCard(buttonElement){
     buttonElement.disabled = false;
     buttonElement.textContent = originalLabel;
     buttonElement.classList.remove("is-loading");
+  }
+}
+
+async function downloadScheduleDayPoster(dayKey, gamesForDay, buttonElement) {
+  if (!Array.isArray(gamesForDay) || !gamesForDay.length) return;
+
+  const originalLabel = buttonElement ? buttonElement.textContent : "";
+  if (buttonElement) {
+    buttonElement.disabled = true;
+    buttonElement.textContent = "Preparing...";
+  }
+
+  try {
+    const dayDate = dayKey !== "TBD Date" ? new Date(dayKey) : null;
+    const dayLabel = dayDate && !Number.isNaN(dayDate.getTime())
+      ? dayDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "2-digit", year: "numeric" })
+      : "TBD Date";
+
+    const rowHeight = 172;
+    const canvasWidth = 1080;
+    const canvasHeight = Math.max(980, 320 + (gamesForDay.length * rowHeight) + 130);
+    const canvas = document.createElement("canvas");
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+    const context = canvas.getContext("2d");
+
+    if (!context) {
+      throw new Error("Canvas context unavailable");
+    }
+
+    const backgroundGradient = context.createLinearGradient(0, 0, canvasWidth, canvasHeight);
+    backgroundGradient.addColorStop(0, "#050b16");
+    backgroundGradient.addColorStop(0.5, "#0f172a");
+    backgroundGradient.addColorStop(1, "#111827");
+    context.fillStyle = backgroundGradient;
+    context.fillRect(0, 0, canvasWidth, canvasHeight);
+
+    context.fillStyle = "rgba(37, 99, 235, 0.22)";
+    context.beginPath();
+    context.arc(980, 100, 200, 0, Math.PI * 2);
+    context.fill();
+
+    context.fillStyle = "#f8fafc";
+    context.font = "900 44px Inter, Arial";
+    context.fillText("METROVILLE GAME SCHEDULE", 60, 86);
+    context.fillStyle = "#bfdbfe";
+    context.font = "700 28px Inter, Arial";
+    context.fillText(dayLabel, 60, 124);
+
+    context.fillStyle = "rgba(15, 23, 42, 0.72)";
+    context.beginPath();
+    drawRoundedRect(context, 46, 150, 988, canvasHeight - 220, 26);
+    context.fill();
+    context.strokeStyle = "rgba(148, 163, 184, 0.26)";
+    context.lineWidth = 1.4;
+    context.beginPath();
+    drawRoundedRect(context, 46, 150, 988, canvasHeight - 220, 26);
+    context.stroke();
+
+    for (let index = 0; index < gamesForDay.length; index += 1) {
+      const game = gamesForDay[index];
+      const top = 176 + (index * rowHeight);
+
+      context.fillStyle = index % 2 === 0 ? "rgba(30, 41, 59, 0.68)" : "rgba(15, 23, 42, 0.68)";
+      context.beginPath();
+      drawRoundedRect(context, 72, top, 936, rowHeight - 16, 18);
+      context.fill();
+
+      const awayTeam = String(game.away || "Away Team");
+      const homeTeam = String(game.home || "Home Team");
+      const matchTime = formatScheduleTime(game.time || "");
+      const venue = String(game.venue || "Metroville Basketball Court");
+
+      const awayLogo = await loadImageForCanvas(getTeamLogo(awayTeam));
+      const homeLogo = await loadImageForCanvas(getTeamLogo(homeTeam));
+
+      const awayLogoX = 132;
+      const homeLogoX = 772;
+      const logoY = top + 28;
+      const logoSize = 78;
+
+      context.fillStyle = "#f8fafc";
+      context.beginPath();
+      drawRoundedRect(context, awayLogoX, logoY, logoSize, logoSize, 999);
+      context.fill();
+      context.beginPath();
+      drawRoundedRect(context, homeLogoX, logoY, logoSize, logoSize, 999);
+      context.fill();
+
+      if (awayLogo) drawImageCover(context, awayLogo, awayLogoX, logoY, logoSize, logoSize);
+      if (homeLogo) drawImageCover(context, homeLogo, homeLogoX, logoY, logoSize, logoSize);
+
+      context.fillStyle = "#f8fafc";
+      context.font = "800 26px Inter, Arial";
+      context.fillText(awayTeam, 228, top + 64);
+      context.fillText(homeTeam, 868, top + 64);
+
+      context.fillStyle = "#93c5fd";
+      context.font = "900 20px Inter, Arial";
+      context.fillText("VS", 510, top + 66);
+
+      context.fillStyle = "#cbd5e1";
+      context.font = "700 18px Inter, Arial";
+      context.fillText(`${matchTime} | ${venue}`, 228, top + 106);
+    }
+
+    context.fillStyle = "rgba(148, 163, 184, 0.86)";
+    context.font = "600 18px Inter, Arial";
+    context.fillText(`Generated ${new Date().toLocaleString("en-US")}`, 60, canvasHeight - 34);
+
+    const fileDatePart = String(dayKey || "schedule-day")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+    const downloadLink = document.createElement("a");
+    downloadLink.href = canvas.toDataURL("image/png");
+    downloadLink.download = `schedule-${fileDatePart || "day"}-poster.png`;
+    downloadLink.click();
+  } catch (error) {
+    console.error("Failed to download day schedule poster", error);
+    alert("Unable to download day schedule poster right now.");
+  } finally {
+    if (buttonElement) {
+      buttonElement.disabled = false;
+      buttonElement.textContent = originalLabel;
+    }
   }
 }
 
